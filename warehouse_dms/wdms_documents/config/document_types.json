@@ -1,0 +1,116 @@
+{
+  "document_types": [
+    {
+      "id": "application_form",
+      "label": "Application Form",
+      "category": "FORM",
+      "initial_state": "PENDING_STAFF",
+      "allowed_uploader_roles": ["DEPOSITOR"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_STAFF",      "to_state": "PENDING_MANAGER",    "required_role": "STAFF",     "action": "confirm" },
+        { "from_state": "PENDING_STAFF",      "to_state": "CORRECTION_NEEDED",  "required_role": "STAFF",     "action": "send_back",            "reason_required": true },
+        { "from_state": "PENDING_MANAGER",    "to_state": "PENDING_CEO",        "required_role": "MANAGER",   "action": "approve" },
+        { "from_state": "PENDING_MANAGER",    "to_state": "REJECTED",           "required_role": "MANAGER",   "action": "reject" },
+        { "from_state": "PENDING_MANAGER",    "to_state": "CORRECTION_NEEDED",  "required_role": "MANAGER",   "action": "send_back",            "reason_required": true },
+        { "from_state": "PENDING_MANAGER",    "to_state": "PENDING_STAFF",      "required_role": "MANAGER",   "action": "send_back_to_staff",   "reason_required": true },
+        { "from_state": "PENDING_CEO",        "to_state": "APPROVED",           "required_role": "CEO",       "action": "final_approve" },
+        { "from_state": "PENDING_CEO",        "to_state": "REJECTED",           "required_role": "CEO",       "action": "reject" },
+        { "from_state": "PENDING_CEO",        "to_state": "CORRECTION_NEEDED",  "required_role": "CEO",       "action": "send_back",            "reason_required": true },
+        { "from_state": "PENDING_CEO",        "to_state": "PENDING_STAFF",      "required_role": "CEO",       "action": "send_back_to_staff",   "reason_required": true },
+        { "from_state": "PENDING_CEO",        "to_state": "PENDING_MANAGER",    "required_role": "CEO",       "action": "send_back_to_manager", "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED",  "to_state": "PENDING_STAFF",      "required_role": "DEPOSITOR", "action": "resubmit" }
+      ],
+      "required_fields": ["applicant_name", "warehouse_code", "date", "signature"],
+      "optional_fields": ["reference_number", "description", "contact_phone"],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.75,
+        "require_signature": true,
+        "require_stamp": false,
+        "require_date": true
+      },
+      "classification_hints": [
+        "application for warehouse services",
+        "request to deposit goods",
+        "depositor application"
+      ]
+    },
+    {
+      "id": "inspection_form",
+      "label": "Warehouse Inspection Form",
+      "category": "FORM",
+      "initial_state": "PENDING_MANAGER",
+      "allowed_uploader_roles": ["STAFF"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_MANAGER",    "to_state": "PENDING_CEO",        "required_role": "MANAGER", "action": "approve" },
+        { "from_state": "PENDING_MANAGER",    "to_state": "CORRECTION_NEEDED",  "required_role": "MANAGER", "action": "send_back",            "reason_required": true },
+        { "from_state": "PENDING_CEO",        "to_state": "APPROVED",           "required_role": "CEO",     "action": "final_approve" },
+        { "from_state": "PENDING_CEO",        "to_state": "CORRECTION_NEEDED",  "required_role": "CEO",     "action": "send_back",            "reason_required": true },
+        { "from_state": "PENDING_CEO",        "to_state": "PENDING_MANAGER",    "required_role": "CEO",     "action": "send_back_to_manager", "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED",  "to_state": "PENDING_MANAGER",    "required_role": "STAFF",   "action": "resubmit" }
+      ],
+      "required_fields": ["warehouse_name", "region", "inspection_date", "inspector_name", "findings"],
+      "optional_fields": ["recommendations", "photographs_attached"],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.80,
+        "require_signature": true,
+        "require_stamp": true,
+        "require_date": true
+      },
+      "classification_hints": [
+        "warehouse inspection report",
+        "physical inspection findings",
+        "compliance inspection"
+      ]
+    },
+    {
+      "id": "compliance_certificate",
+      "label": "Warehouse Compliance Certificate",
+      "category": "CERTIFICATE",
+      "initial_state": "APPROVED",
+      "allowed_uploader_roles": ["REGULATOR"],
+      "allowed_transitions": [],
+      "required_fields": ["warehouse_code", "certificate_number", "issue_date", "valid_until", "issuing_authority"],
+      "optional_fields": ["conditions", "scope"],
+      "file_formats": ["pdf"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.85,
+        "require_signature": true,
+        "require_stamp": true,
+        "require_date": true
+      },
+      "classification_hints": [
+        "compliance certificate",
+        "warehouse licensing",
+        "regulatory authorization"
+      ]
+    },
+    {
+      "id": "warehouse_receipt",
+      "label": "Warehouse Delivery Receipt",
+      "category": "RECEIPT",
+      "initial_state": "PENDING_MANAGER",
+      "allowed_uploader_roles": ["STAFF"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_MANAGER",    "to_state": "APPROVED",           "required_role": "MANAGER", "action": "approve" },
+        { "from_state": "PENDING_MANAGER",    "to_state": "CORRECTION_NEEDED",  "required_role": "MANAGER", "action": "send_back", "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED",  "to_state": "PENDING_MANAGER",    "required_role": "STAFF",   "action": "resubmit" }
+      ],
+      "required_fields": ["depositor_name", "goods_description", "quantity", "receipt_date"],
+      "optional_fields": ["storage_location", "condition_notes"],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.75,
+        "require_signature": true,
+        "require_stamp": false,
+        "require_date": true
+      },
+      "classification_hints": [
+        "warehouse delivery receipt",
+        "goods received",
+        "storage confirmation"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+*.so
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Environment / secrets — NEVER commit these
+.env
+*.env
+!.env.example
+
+# Google Cloud service account keys
+service.json
+*service-account*.json
+*service_account*.json
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# Docker
+*.pid
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# pgvector build artifacts
+pgvector_src/*.o
+pgvector_src/*.obj
+
+# Test / coverage
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.pytest_cache/

@@ -1,0 +1,73 @@
+
+Phase 3 API Test Results
+Run status: PASSED
+Summary: 52 passed, 0 failed, 100%
+
+Run command:
+wsl -- docker compose -f /mnt/c/Users/kasui/Documents/Ai-Warehouse/warehouse_dms/docker-compose.yml exec web python test_phase3.py
+
+Section 0 - Server Health
+PASS 0.1 Scalar docs page loads (HTTP 200)
+PASS 0.2 Admin page reachable
+
+Section 1 - Three-Step SSE Upload Flow
+PASS 1.1 POST /upload/ returns 200 + response.status=True
+PASS 1.2 Response data has camelCase keys (attemptId, streamUrl)
+PASS 1.3 streamUrl matches /api/v1/documents/upload/{id}/stream/
+PASS 1.4 SSE endpoint returns HTTP 200
+PASS 1.5 SSE Content-Type is text/event-stream
+PASS 1.6 SSE stream emits >=1 event
+PASS 1.7 SSE stream emits 'complete' event with outcome=PASSED
+PASS 1.8 POST /confirm/ after PASSED returns Document
+PASS 1.9 Confirmed document starts at PENDING_STAFF
+PASS 1.10 Second confirm is idempotent (returns same document)
+
+Section 2 - Upload Edge Cases
+PASS 2.1 Unauthenticated POST /upload/ returns 401
+PASS 2.2 Depositor cannot upload inspection_form (role gate)
+PASS 2.3 Confirm while PENDING is rejected with message
+PASS 2.4 Other user cannot confirm someone else's upload
+PASS 2.5 Unknown document type rejected
+
+Section 3 - SSE Stream Access Control
+PASS 3.1 Unauthenticated SSE stream returns 401
+PASS 3.2 Stream for non-existent attempt returns 404
+PASS 3.3 Other user cannot watch someone else's SSE stream
+
+Section 4 - Notification Events via FSM Transitions
+PASS 4.1 GET /notifications/ without auth returns 401
+PASS 4.2 GET /notifications/ with auth returns 200 + response.status=True
+PASS 4.3 Staff confirm transitions document to PENDING_MANAGER
+PASS 4.4 Depositor gains notification after staff confirm
+PASS 4.5 Notification has required camelCase fields
+PASS 4.6 camelCase key readOnDashboard is present
+PASS 4.7 unreadOnly=true returns only unread notifications
+PASS 4.8 Manager approve transitions document to PENDING_CEO
+PASS 4.9 Depositor gains notification after manager approve
+PASS 4.10 CEO final_approve transitions document to APPROVED
+PASS 4.11 Depositor gains notification after CEO final approve
+PASS 4.12 Rejection creates DOCUMENT_REJECTED notification for depositor
+
+Section 5 - Mark Read Endpoints
+PASS 5.1 POST /notifications/{id}/mark-read/ returns 200 + status=True
+PASS 5.2 readOnDashboard=True after mark-read
+PASS 5.3 readAt timestamp is set after mark-read
+PASS 5.4 Cannot mark another user's notification as read
+PASS 5.5 mark-read on non-existent ID returns response.status=False
+PASS 5.6 POST /notifications/mark-all-read/ returns 200 + status=True
+PASS 5.7 After mark-all-read, unreadOnly=true returns 0 notifications
+
+Section 6 - Notification Preferences
+PASS 6.1 Unauthenticated GET /preferences/ returns 401
+PASS 6.2 GET /preferences/ returns 200 + response.status=True
+PASS 6.3 Returns 27 preference rows (9 types x 3 channels)
+PASS 6.4 Preferences have camelCase keys (eventType, channel, enabled)
+PASS 6.5 All 9 notification event types present in preferences
+PASS 6.6 All 3 channels present (DASHBOARD, EMAIL, SMS)
+PASS 6.7 DASHBOARD channel enabled=True for all event types by default
+PASS 6.8 SMS channel enabled=False for all event types by default
+PASS 6.9 PUT /preferences/ updates a preference
+PASS 6.10 GET /preferences/ after update reflects the change
+PASS 6.11 DASHBOARD channel cannot be disabled
+PASS 6.12 Invalid event_type rejected
+PASS 6.13 Invalid channel rejected

@@ -1,0 +1,259 @@
+
+
+Phase 2 API Test Results
+Run status: PASSED
+Summary: 66 passed, 0 failed, 100%
+
+Section 0 - Server Health
+PASS 0.1 Scalar docs page loads (HTTP 200)
+PASS 0.2 Admin page reachable
+
+Section 1 - Authentication
+PASS 1.1 Login success [admin]
+PASS 1.1 Login success [depositor]
+PASS 1.1 Login success [staff]
+PASS 1.1 Login success [manager]
+PASS 1.1 Login success [ceo]
+PASS 1.1 Login success [regulator]
+PASS 1.2 camelCase in login response (userName present)
+PASS 1.3 Bad password returns no token
+PASS 1.4 Unknown user returns no token
+PASS 1.5 GET /accounts/me - depositor
+PASS 1.6 Unauthenticated /accounts/me -> 401
+PASS 1.7 GET /auth/roles returns >=1 role
+PASS 1.8 GET /auth/permissions/grouped
+
+Section 2 - Tenants and Warehouses
+PASS 2.1 GET /tenants/regions - admin sees >=1 region
+PASS 2.2 GET /tenants/ - admin sees >=1 tenant
+PASS 2.3 GET /tenants/ - depositor correctly rejected (admin-only)
+PASS 2.4 GET /tenants/warehouses - staff sees warehouses
+PASS 2.5 Unauthenticated /tenants/ -> 401
+
+Section 3 - Document Type Metadata
+PASS 3.1 GET /documents/types/ succeeds
+PASS 3.2 Exactly 4 document types returned
+PASS 3.3 Type 'application_form' present
+PASS 3.3 Type 'inspection_form' present
+PASS 3.3 Type 'compliance_certificate' present
+PASS 3.3 Type 'warehouse_receipt' present
+PASS 3.4 application_form has >=12 transitions
+PASS 3.5 compliance_certificate has 0 transitions
+PASS 3.6 camelCase aliasing on type (allowedTransitions key present)
+
+Section 4 - Document Lifecycle (Happy Path)
+PASS 4.1 Depositor uploads application_form -> PENDING_STAFF
+PASS 4.2 Depositor list includes new doc
+PASS 4.3 Staff sees doc in PENDING_STAFF list
+PASS 4.4 Staff sees 2 transitions (confirm, send_back) on PENDING_STAFF doc
+PASS 4.5 Staff confirm -> PENDING_MANAGER
+PASS 4.6 Depositor cannot confirm (role-gating works)
+PASS 4.7 Manager approve -> PENDING_CEO
+PASS 4.8 CEO final_approve -> APPROVED
+PASS 4.9 Detail has 3 transition records (full audit trail)
+PASS 4.9b Audit trail actors match expected roles
+
+Section 5 - Correction Flows
+PASS 5.1 Staff send_back -> CORRECTION_NEEDED
+PASS 5.1b currentCorrectionNote stored on document
+PASS 5.2 Depositor resubmit -> PENDING_STAFF
+PASS 5.2b currentCorrectionNote cleared after resubmit
+PASS 5.3 send_back without reason rejected
+PASS 5.3b Document still PENDING_STAFF after rejected transition
+PASS 5.4 CEO send_back_to_manager -> PENDING_MANAGER
+PASS 5.5 Manager re-approve after send_back -> PENDING_CEO
+
+Section 6 - Negative and Edge-Case Tests
+PASS 6.1 Depositor cannot upload inspection_form
+PASS 6.2 Staff CAN upload inspection_form
+PASS 6.3 Unauthenticated /documents/ -> 401
+PASS 6.4 GET /documents/999999/ returns not-found response
+PASS 6.5 Unknown transition action rejected
+PASS 6.6 Role [admin] can authenticate
+PASS 6.6 Role [depositor] can authenticate
+PASS 6.6 Role [staff] can authenticate
+PASS 6.6 Role [manager] can authenticate
+PASS 6.6 Role [ceo] can authenticate
+PASS 6.6 Role [regulator] can authenticate
+PASS 6.7 Manager list /documents/ returns >=0 docs without error
+PASS 6.8 Regulator sees 0 docs in Phase 2 (correct scoping)
+PASS 6.9 Pagination schema valid (no 5000 from None int)
+
+Section 7 - Filtering and Pagination
+PASS 7.1 Filter ?status=PENDING_STAFF succeeds
+PASS 7.1 Filter ?status=PENDING_MANAGER succeeds
+PASS 7.1 Filter ?status=APPROVED succeeds
+PASS 7.2 Pagination page=1&items_per_page=5 works
+PASS 7.3 ?search_term=Test succeeds without error
+
+
+
+PS C:\Users\kasui\Documents\Ai-Warehouse> & "C:\Users\kasui\Documents\Ai-Warehouse\warehouse_dms\venv\Scripts\python.exe" "C:\Users\kasui\Documents\Ai-Warehouse\warehouse_dms\test_phase2.py" --verbose 2>&1
+
+  Phase 2 API Test Runner  →  http://localhost:8000/api/v1
+
+  Logging in all users first...
+    [OK] admin (admin)
+    [OK] depositor (depositor_demo)
+    [OK] staff (staff_demo)
+    [OK] manager (manager_demo)
+    [OK] ceo (ceo_demo)
+    [OK] regulator (regulator_demo)
+
+
+═══ Section 0 — Server Health ═══
+  [PASS] 0.1 Scalar docs page loads (HTTP 200)
+         Got HTTP 200
+  [PASS] 0.2 Admin page reachable
+         Got HTTP 302
+
+═══ Section 1 — Authentication ═══
+  [PASS] 1.1 Login success [admin]
+         HTTP 200, token=yes, roles=yes
+  [PASS] 1.1 Login success [depositor]
+         HTTP 200, token=yes, roles=yes
+  [PASS] 1.1 Login success [staff]
+         HTTP 200, token=yes, roles=yes
+  [PASS] 1.1 Login success [manager]
+         HTTP 200, token=yes, roles=yes
+  [PASS] 1.1 Login success [ceo]
+         HTTP 200, token=yes, roles=yes
+  [PASS] 1.1 Login success [regulator]
+         HTTP 200, token=yes, roles=yes
+  [PASS] 1.2 camelCase in login response (userName present)
+         Keys found: ['id', 'userName', 'email', 'firstName', 'lastName']
+  [PASS] 1.3 Bad password returns no token
+         access=''
+  [PASS] 1.4 Unknown user returns no token
+         access=''
+  [PASS] 1.5 GET /accounts/me — depositor
+         HTTP 200, response.status=True
+  [PASS] 1.6 Unauthenticated /accounts/me → 401
+         HTTP 401
+  [PASS] 1.7 GET /auth/roles returns ≥1 role
+         HTTP 200, roles count=6
+  [PASS] 1.8 GET /auth/permissions/grouped
+         HTTP 200
+
+═══ Section 2 — Tenants & Warehouses ═══
+  [PASS] 2.1 GET /tenants/regions — admin sees ≥1 region
+         HTTP 200, regions=10
+  [PASS] 2.2 GET /tenants/ — admin sees ≥1 tenant
+         HTTP 200, tenants=1, page={'number': 1, 'hasNextPage': False, 'hasPreviousPage': False, 'currentPageNumber': 1, 'nextPageNumber': None, 'previousPageNumber': None, 'numberOfPages': 1, 'totalElements': 1, 'pagesNumberArray': [1]}
+  [PASS] 2.3 GET /tenants/ — depositor correctly rejected (admin-only)
+         HTTP 401
+  [PASS] 2.4 GET /tenants/warehouses — staff sees warehouses
+         HTTP 200, warehouses=1
+  [PASS] 2.5 Unauthenticated /tenants/ → 401
+         HTTP 401
+
+═══ Section 3 — Document Type Metadata ═══
+  [PASS] 3.1 GET /documents/types/ succeeds
+         HTTP 200
+  [PASS] 3.2 Exactly 4 document types returned
+         Got 4
+  [PASS] 3.3 Type 'application_form' present
+         Found types: {'inspection_form', 'compliance_certificate', 'application_form', 'warehouse_receipt'}
+  [PASS] 3.3 Type 'inspection_form' present
+         Found types: {'inspection_form', 'compliance_certificate', 'application_form', 'warehouse_receipt'}
+  [PASS] 3.3 Type 'compliance_certificate' present
+         Found types: {'inspection_form', 'compliance_certificate', 'application_form', 'warehouse_receipt'}
+  [PASS] 3.3 Type 'warehouse_receipt' present
+         Found types: {'inspection_form', 'compliance_certificate', 'application_form', 'warehouse_receipt'}
+  [PASS] 3.4 application_form has ≥12 transitions
+         Got 12
+  [PASS] 3.5 compliance_certificate has 0 transitions
+         Got 0
+  [PASS] 3.6 camelCase aliasing on type (allowedTransitions key present)
+         Keys: ['id', 'label', 'category', 'initialState', 'allowedUploaderRoles', 'allowedTransitions', 'requiredFields', 'optionalFields']
+
+═══ Section 4 — Document Lifecycle (Happy Path) ═══
+  [PASS] 4.1 Depositor uploads application_form → PENDING_STAFF
+         HTTP 200, docId=62, status=PENDING_STAFF
+  [PASS] 4.2 Depositor list includes new doc
+         HTTP 200, docs returned=10, found=True
+  [PASS] 4.3 Staff sees doc in PENDING_STAFF list
+         HTTP 200, docs=10, found=True
+  [PASS] 4.4 Staff sees 2 transitions (confirm, send_back) on PENDING_STAFF doc
+         Actions: ['confirm', 'send_back']
+  [PASS] 4.5 Staff confirm → PENDING_MANAGER
+         HTTP 200, status=PENDING_MANAGER
+  [PASS] 4.6 Depositor cannot confirm (role-gating works)
+         HTTP 200, response.status=False
+  [PASS] 4.7 Manager approve → PENDING_CEO
+         HTTP 200, status=PENDING_CEO
+  [PASS] 4.8 CEO final_approve → APPROVED
+         HTTP 200, status=APPROVED
+  [PASS] 4.9 Detail has 3 transition records (full audit trail)
+         Transitions: 3
+  [PASS] 4.9b Audit trail actors match expected roles
+         Actors: ['ceo_demo', 'manager_demo', 'staff_demo']
+
+═══ Section 5 — Correction Flows ═══
+  [PASS] 5.1 Staff send_back → CORRECTION_NEEDED
+         HTTP 200, status=CORRECTION_NEEDED
+  [PASS] 5.1b currentCorrectionNote stored on document
+         note='Missing signature on page 2'
+  [PASS] 5.2 Depositor resubmit → PENDING_STAFF
+         HTTP 200, status=PENDING_STAFF
+  [PASS] 5.2b currentCorrectionNote cleared after resubmit
+         note=''
+  [PASS] 5.3 send_back without reason rejected
+         HTTP 200, response.status=False
+  [PASS] 5.3b Document still PENDING_STAFF after rejected transition
+         status=PENDING_STAFF
+  [PASS] 5.4 CEO send_back_to_manager → PENDING_MANAGER
+         HTTP 200, status=PENDING_MANAGER
+  [PASS] 5.5 Manager re-approve after send_back → PENDING_CEO
+         HTTP 200, status=PENDING_CEO
+
+═══ Section 6 — Negative & Edge-Case Tests ═══
+  [PASS] 6.1 Depositor cannot upload inspection_form
+         HTTP 200, response.status=False
+  [PASS] 6.2 Staff CAN upload inspection_form
+         HTTP 200, status=PENDING_MANAGER
+  [PASS] 6.3 Unauthenticated /documents/ → 401
+         HTTP 401
+  [PASS] 6.4 GET /documents/999999/ returns not-found response
+         HTTP 200, response.status=False
+  [PASS] 6.5 Unknown transition action rejected
+         HTTP 200, response.status=False
+  [PASS] 6.6 Role [admin] can authenticate
+         token present
+  [PASS] 6.6 Role [depositor] can authenticate
+         token present
+  [PASS] 6.6 Role [staff] can authenticate
+         token present
+  [PASS] 6.6 Role [manager] can authenticate
+         token present
+  [PASS] 6.6 Role [ceo] can authenticate
+         token present
+  [PASS] 6.6 Role [regulator] can authenticate
+         token present
+  [PASS] 6.7 Manager list /documents/ returns ≥0 docs without error
+         HTTP 200, docs=10
+  [PASS] 6.8 Regulator sees 0 docs in Phase 2 (correct scoping)
+         HTTP 200, docs=0
+  [PASS] 6.9 Pagination schema valid (no 5000 from None int)
+         nextPageNumber=2, prevPageNumber=None
+
+═══ Section 7 — Filtering & Pagination ═══
+  [PASS] 7.1 Filter ?status=PENDING_STAFF succeeds
+         HTTP 200, docs=10
+  [PASS] 7.1 Filter ?status=PENDING_MANAGER succeeds
+         HTTP 200, docs=10
+  [PASS] 7.1 Filter ?status=APPROVED succeeds
+         HTTP 200, docs=10
+  [PASS] 7.2 Pagination page=1&items_per_page=5 works
+         HTTP 200, page keys=['number', 'hasNextPage', 'hasPreviousPage', 'currentPageNumber', 'nextPageNumber', 'previousPageNumber', 'numberOfPages', 'totalElements', 'pagesNumberArray']
+  [PASS] 7.3 ?search_term=Test succeeds without error
+         HTTP 200
+
+╔══════════════════════════════════════╗
+║         TEST RESULTS SUMMARY         ║
+╚══════════════════════════════════════╝
+  Total:  66
+  Passed: 66
+  Failed: 0
+
+  ████████████████████ 100%
