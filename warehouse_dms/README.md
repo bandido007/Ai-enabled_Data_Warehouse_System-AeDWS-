@@ -40,9 +40,12 @@ docker compose up --build
 ```
 
 Services started:
-- **web** — Django/Gunicorn on port 8000
-- **db** — PostgreSQL 16 with pgvector on port 5432
-- **redis** — Redis 7 on port 6379
+- **web** — Django/Uvicorn on host port 8001
+- **db** — PostgreSQL 16 with pgvector on host port 5433
+- **redis** — Redis 7 on host port 6380
+
+If these defaults do not suit your machine, set `WEB_HOST_PORT`, `POSTGRES_HOST_PORT`,
+and `REDIS_HOST_PORT` in `.env` before starting Compose.
 
 ### 4. Run database migrations
 
@@ -69,8 +72,8 @@ This creates:
 
 Open your browser at:
 
-- **API docs (Scalar):** http://localhost:8000/api/v1/docs
-- **Django admin:** http://localhost:8000/admin
+- **API docs (Scalar):** http://localhost:8001/api/v1/docs
+- **Django admin:** http://localhost:8001/admin
 
 ---
 

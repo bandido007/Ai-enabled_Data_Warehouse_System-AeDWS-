@@ -26,6 +26,19 @@ def _redis_client():
     )
 
 
+_EVENTS_TTL = 300  # seconds — keep event history long enough for the client to reconnect
+
+
+def _store_event(client, attempt_id: int, payload: dict):
+    """Persist event to a Redis list so the fast-path can replay it."""
+    list_key = f"upload_events:{attempt_id}"
+    try:
+        client.rpush(list_key, json.dumps(payload))
+        client.expire(list_key, _EVENTS_TTL)
+    except Exception as e:
+        logger.warning(f"Failed to store event for {list_key}: {e}")
+
+
 def publish_progress(attempt_id: int, stage: str, status: str, message: str, **details):
     """Called by Celery workers to push progress to the SSE stream."""
     channel = f"upload:{attempt_id}"
@@ -36,7 +49,9 @@ def publish_progress(attempt_id: int, stage: str, status: str, message: str, **d
         "details": details,
     }
     try:
-        _redis_client().publish(channel, json.dumps(payload))
+        client = _redis_client()
+        _store_event(client, attempt_id, payload)
+        client.publish(channel, json.dumps(payload))
     except Exception as e:
         logger.error(f"Failed to publish to {channel}: {e}")
 
@@ -50,7 +65,12 @@ def publish_complete(attempt_id: int, outcome: str, warnings: list = None):
         "outcome": outcome,  # "HARD_REJECT" | "SOFT_WARNING" | "PASSED"
         "warnings": warnings or [],
     }
-    _redis_client().publish(channel, json.dumps(payload))
+    try:
+        client = _redis_client()
+        _store_event(client, attempt_id, payload)
+        client.publish(channel, json.dumps(payload))
+    except Exception as e:
+        logger.error(f"Failed to publish_complete to {channel}: {e}")
 
 
 def stream_upload_progress(attempt_id: int) -> StreamingHttpResponse:
@@ -66,19 +86,34 @@ def stream_upload_progress(attempt_id: int) -> StreamingHttpResponse:
 
     def event_stream() -> Iterator[str]:
         # ── Fast-path: attempt already finished ────────────────────────────
+        # Replay all stored events from the Redis list so the client sees
+        # the full OCR + validation progress even when the worker finished
+        # before this stream was opened.
         try:
             from wdms_documents.models import UploadAttempt, UploadAttemptStatus
             attempt = UploadAttempt.objects.get(pk=attempt_id)
             if attempt.validation_status != UploadAttemptStatus.PENDING:
-                outcome = attempt.validation_status
-                warnings = attempt.validation_warnings or []
-                payload = json.dumps({
-                    "stage": "final",
-                    "status": "complete",
-                    "outcome": outcome,
-                    "warnings": warnings,
-                })
-                yield f"event: complete\ndata: {payload}\n\n"
+                client = _redis_client()
+                list_key = f"upload_events:{attempt_id}"
+                stored = client.lrange(list_key, 0, -1) or []
+                for raw in stored:
+                    try:
+                        parsed = json.loads(raw)
+                    except Exception:
+                        continue
+                    evt_name = "complete" if parsed.get("status") == "complete" else "progress"
+                    yield f"event: {evt_name}\ndata: {raw}\n\n"
+                # If no stored events (old data), fall back to synthesising the complete event
+                if not stored:
+                    outcome = attempt.validation_status
+                    warnings = attempt.validation_warnings or []
+                    payload = json.dumps({
+                        "stage": "final",
+                        "status": "complete",
+                        "outcome": outcome,
+                        "warnings": warnings,
+                    })
+                    yield f"event: complete\ndata: {payload}\n\n"
                 return
         except Exception:
             pass  # Fall through to live-subscribe

@@ -50,7 +50,7 @@ class WorkflowTransitionItemSerializer(BaseSchema):
     actor: Optional[UserResponse] = None
     edited_fields: Dict[str, Any] = {}
     ai_corrections: Dict[str, Any] = {}
-    created_date: date
+    created_date: datetime
 
     @model_validator(mode="before")
     @classmethod
@@ -113,9 +113,16 @@ class DocumentTableSerializer(BaseSerializer):
     def extract_fields(cls, data):
         if hasattr(data, "pk") and hasattr(data, "warehouse"):
             file_url = None
-            if getattr(data, "file", None) and data.file:
+            raw_file = getattr(data, "file", None)
+            if raw_file:
                 try:
-                    file_url = data.file.url
+                    # When called via Django Ninja's DjangoGetter, FieldFile is already
+                    # converted to its URL string by _convert_result — so we check for str.
+                    if isinstance(raw_file, str):
+                        file_url = raw_file or None
+                    else:
+                        # plain Django ORM object — FieldFile needs .url
+                        file_url = raw_file.url if raw_file.name else None
                 except Exception:
                     file_url = None
             created_by_user = data.created_by
@@ -181,6 +188,14 @@ class TransitionActionInputSerializer(BaseSchema):
     ai_corrections: Dict[str, Any] = {}
 
 
+# Form-fill payload (for POST /documents/form-fill/)
+class FormFillInputSerializer(BaseSchema):
+    document_type_id: str
+    warehouse_id: int
+    title: str
+    fields: Dict[str, Any] = {}
+
+
 # Allowed-transitions list response (for GET /documents/{id}/transitions/)
 class AllowedTransitionSerializer(BaseSchema):
     from_state: str
@@ -217,6 +232,7 @@ class DocumentTypeValidationRulesSerializer(BaseSchema):
 class DocumentTypeMetadataSerializer(BaseSchema):
     id: str
     label: str
+    form_number: str = ""
     category: str
     initial_state: str
     allowed_uploader_roles: List[str]
@@ -270,3 +286,71 @@ class SearchResponseDataSerializer(BaseSchema):
 
 class SearchResponseSerializer(BaseNonPagedResponseData):
     data: Optional[SearchResponseDataSerializer] = None
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Bulk transitions — POST /documents/transitions/bulk/
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+class BulkTransitionsInputSerializer(BaseSchema):
+    document_ids: List[int]
+
+
+class BulkTransitionsResponseSerializer(BaseNonPagedResponseData):
+    data: Optional[Dict[str, List[AllowedTransitionSerializer]]] = None
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Dashboard statistics — GET /documents/stats/
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+class RecentActivityItemSerializer(BaseSchema):
+    document_id: int
+    document_title: str
+    action: str
+    from_status: str
+    to_status: str
+    actor_name: str
+    created_date: datetime
+
+
+class DocumentStatsSerializer(BaseSchema):
+    status_counts: Dict[str, int]
+    approved_this_week: int
+    rejected_this_week: int
+    avg_approval_hours: Optional[float]
+    recent_activity: List[RecentActivityItemSerializer]
+
+
+class DocumentStatsResponseSerializer(BaseNonPagedResponseData):
+    data: Optional[DocumentStatsSerializer] = None
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Form validation (AI review before submit)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+class FormValidationInputSerializer(BaseInputSerializer):
+    """Request to validate form fields before submission."""
+    fields: Dict[str, Any] = {}
+
+
+class FormValidationDraftInputSerializer(BaseInputSerializer):
+    """Request to validate form fields before creating document (draft mode)."""
+    document_type_id: str
+    fields: Dict[str, Any] = {}
+
+
+class FormValidationResultSerializer(BaseSchema):
+    """AI validation result for form submission."""
+    confidence: float  # 0.0 to 1.0
+    verdict: str  # "PASS", "SOFT_WARNING", "HARD_REJECT"
+    issues: List[str] = []  # Problems found
+    recommendations: List[str] = []  # Suggested fixes
+    warnings: List[str] = []  # Additional context
+
+
+class FormValidationResponseSerializer(BaseNonPagedResponseData):
+    data: Optional[FormValidationResultSerializer] = None

@@ -84,6 +84,9 @@ class LLMServiceInterface(ABC):
         text: str,
         extracted_fields: Dict[str, Any],
         document_type_label: str,
+        required_fields: List[str] | None = None,
+        is_form_fill: bool = False,
+        today: str | None = None,
     ) -> ReviewResult:
         """Produce summary + reviewer-facing notes + keywords."""
 

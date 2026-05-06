@@ -1,0 +1,192 @@
+
+Phase 4 API Test Results
+Run status: PASSED
+Summary: 47 passed, 0 failed, 100%
+
+Run command:
+python test_phase4.py --base-url http://localhost:8001
+
+Section 0 - Server Health
+PASS 0.1 Scalar docs page loads (HTTP 200)
+PASS 0.2 Admin page reachable
+
+Section 1 - Stage-0 Validation (real OCR + LLM verdict)
+PASS 1.1 POST /upload/ returns 200 + response.status=True
+PASS 1.2 SSE stream returns HTTP 200
+PASS 1.3 SSE emits 'ocr' and 'validation' progress stages
+PASS 1.4 OCR 'done' event includes character_count + confidence
+PASS 1.5 SSE emits 'complete' with outcome in {PASSED, SOFT_WARNING, HARD_REJECT}
+PASS 1.6 SSE 'complete' event has warnings list
+PASS 1.7 POST /confirm/ (softWarningOverride=true) returns Document
+PASS 1.8 AI chain populates aiClassification within 30 s
+PASS 1.9 AI chain populates aiExtractedFields within 30 s
+PASS 1.10 AI chain populates aiSummary within 30 s
+PASS 1.11 AI chain populates aiReviewNotes within 30 s
+PASS 1.12 AI chain populates aiKeywords (>=1 keyword)
+PASS 1.13 aiConfidenceScore is a float in [0, 1]
+
+Section 2 - Reclassification
+PASS 2.1 Unauthenticated POST /reclassify/ -> 401
+PASS 2.2 Depositor cannot reclassify (role gate)
+PASS 2.3 Unknown newTypeId rejected
+PASS 2.4 Reclassify to the same current type -> rejected
+PASS 2.5 Staff reclassifies to a new type -> 200 + status=True
+PASS 2.6 WorkflowTransition row with action='reclassify' is created
+PASS 2.7 reclassify audit row preserves previousClassification in aiCorrections
+PASS 2.8 aiExtractedFields repopulates after reclassification
+
+Section 3 - Correct AI Fields
+PASS 3.1 Unauthenticated POST /correct-ai/ -> 401
+PASS 3.2 Depositor cannot correct AI fields (role gate)
+PASS 3.3 Empty corrections object rejected
+PASS 3.4 Staff correction applies immediately
+PASS 3.5 WorkflowTransition row with action='correct_ai' is created
+PASS 3.6 correct_ai audit row editedFields includes the override
+PASS 3.7 correct_ai audit row aiCorrections snapshots original value
+PASS 3.8 Existing extracted fields are preserved (not wiped)
+
+Section 4 - Document Search
+PASS 4.1 Unauthenticated POST /search/ -> 401
+PASS 4.2 Empty query rejected
+PASS 4.3 Invalid 'type' rejected
+PASS 4.4 Keyword search returns mode='keyword'
+PASS 4.5 Keyword response data.results is a list
+PASS 4.6 Semantic search returns mode='semantic'
+PASS 4.7 Semantic results include numeric 'score'
+PASS 4.8 Auto mode for short phrase resolves to mode='keyword' + detected=true
+PASS 4.9 Auto mode for long sentence resolves to mode='semantic' + detected=true
+PASS 4.10 type omitted -> defaults to auto (detected=true)
+PASS 4.11 Depositor scope is <= staff scope (role-scoped queryset)
+
+Section 5 - Mock-services Behaviour
+PASS 5.1 aiSummary is populated
+PASS 5.2 Bilingual mock text receives a non-empty classification
+PASS 5.3 Extracted date field is in ISO 8601 (YYYY-MM-DD...)
+PASS 5.4 Reclassify-driven re-run returns 200 + status=True
+PASS 5.5 After reclassify-rerun, aiExtractedFields is still populated
+
+
+--- Verbose output ---
+
+  Phase 4 API Test Runner  ->  http://localhost:8001/api/v1
+
+  Logging in all users first...
+    [OK] admin (admin)
+    [OK] depositor (depositor_demo)
+    [OK] staff (staff_demo)
+    [OK] manager (manager_demo)
+    [OK] ceo (ceo_demo)
+    [OK] regulator (regulator_demo)
+
+
+=== Section 0 - Server Health ===
+  [PASS] 0.1 Scalar docs page loads (HTTP 200)
+  [PASS] 0.2 Admin page reachable
+
+=== Section 1 - Stage-0 Validation (real OCR + LLM verdict) ===
+  [PASS] 1.1 POST /upload/ returns 200 + response.status=True
+  [PASS] 1.2 SSE stream returns HTTP 200
+  [PASS] 1.3 SSE emits 'ocr' and 'validation' progress stages
+         Stages seen: ['ocr', 'validation']
+  [PASS] 1.4 OCR 'done' event includes character_count + confidence
+         ocr.done details={'character_count': 125, 'confidence': 0.97}
+  [PASS] 1.5 SSE emits 'complete' with outcome in {PASSED, SOFT_WARNING, HARD_REJECT}
+         outcome='SOFT_WARNING'
+  [PASS] 1.6 SSE 'complete' event has warnings list
+         warnings=["Required field 'applicant_name' not found in document", "Required field 'warehouse_code' not found in document"]
+  [PASS] 1.7 POST /confirm/ (softWarningOverride=true) returns Document
+         doc id=3
+  [PASS] 1.8 AI chain populates aiClassification within 30 s
+         aiClassification='application_form'
+  [PASS] 1.9 AI chain populates aiExtractedFields within 30 s
+         field_count=5 keys=['applicant_name', 'warehouse_code', 'inspection_date', 'inspector_name', 'status']
+  [PASS] 1.10 AI chain populates aiSummary within 30 s
+         summary[:60]='This is a warehouse inspection form submitted by John M'
+  [PASS] 1.11 AI chain populates aiReviewNotes within 30 s
+         reviewNotes[:60]='Document appears to be a warehouse inspection form. '
+  [PASS] 1.12 AI chain populates aiKeywords (>=1 keyword)
+         keyword_count=6 sample=['warehouse', 'inspection', 'form', 'ukaguzi', 'ghala', 'John']
+  [PASS] 1.13 aiConfidenceScore is a float in [0, 1]
+         aiConfidenceScore=0.82
+
+=== Section 2 - Reclassification ===
+  [PASS] 2.1 Unauthenticated POST /reclassify/ -> 401
+         HTTP 401
+  [PASS] 2.2 Depositor cannot reclassify (role gate)
+         HTTP 200, response.status=False
+  [PASS] 2.3 Unknown newTypeId rejected
+         HTTP 200, response.status=False
+  [PASS] 2.4 Reclassify to the same current type -> rejected
+         HTTP 200, response.status=False
+  [PASS] 2.5 Staff reclassifies to a new type -> 200 + status=True
+         HTTP 200, response.status=True, newClassification='warehouse_receipt'
+  [PASS] 2.6 WorkflowTransition row with action='reclassify' is created
+         transition actions=['reclassify']
+  [PASS] 2.7 reclassify audit row preserves previousClassification in aiCorrections
+         aiCorrections keys=['previousClassification', 'reason']
+  [PASS] 2.8 aiExtractedFields repopulates after reclassification
+         field_count=5 keys=['applicant_name', 'warehouse_code', 'inspection_date', 'inspector_name', 'status']
+
+=== Section 3 - Correct AI Fields ===
+  [PASS] 3.1 Unauthenticated POST /correct-ai/ -> 401
+         HTTP 401
+  [PASS] 3.2 Depositor cannot correct AI fields (role gate)
+         HTTP 200, response.status=False
+  [PASS] 3.3 Empty corrections object rejected
+         HTTP 200, response.status=False
+  [PASS] 3.4 Staff correction applies immediately
+         HTTP 200, applicant_name='PHASE4_OVERRIDE_VALUE'
+  [PASS] 3.5 WorkflowTransition row with action='correct_ai' is created
+         transition actions=['correct_ai']
+  [PASS] 3.6 correct_ai audit row editedFields includes the override
+         editedFields={'applicant_name': 'PHASE4_OVERRIDE_VALUE'}
+  [PASS] 3.7 correct_ai audit row aiCorrections snapshots original value
+         aiCorrections={'applicant_name': 'John Mwangi'}
+  [PASS] 3.8 Existing extracted fields are preserved (not wiped)
+         preserved_key='warehouse_code' still_present=True
+
+=== Section 4 - Document Search ===
+  [PASS] 4.1 Unauthenticated POST /search/ -> 401
+         HTTP 401
+  [PASS] 4.2 Empty query rejected
+         HTTP 200, response.status=False
+  [PASS] 4.3 Invalid 'type' rejected
+         HTTP 200, response.status=False
+  [PASS] 4.4 Keyword search returns mode='keyword'
+         HTTP 200, mode='keyword'
+  [PASS] 4.5 Keyword response data.results is a list
+         type(results)=list
+  [PASS] 4.6 Semantic search returns mode='semantic'
+         HTTP 200, mode='semantic'
+  [PASS] 4.7 Semantic results include numeric 'score'
+         score=0.0 (type=float)
+  [PASS] 4.8 Auto mode for short phrase resolves to mode='keyword' + detected=true
+         mode='keyword', detected=True
+  [PASS] 4.9 Auto mode for long sentence resolves to mode='semantic' + detected=true
+         mode='semantic', detected=True
+  [PASS] 4.10 type omitted -> defaults to auto (detected=true)
+         detected=True
+  [PASS] 4.11 Depositor scope is <= staff scope (role-scoped queryset)
+         depositor_count<=staff_count
+
+=== Section 5 - Mock-services Behaviour ===
+  [PASS] 5.1 aiSummary is populated
+         summary[:80]='This is a warehouse inspection form submitted by John Mwangi on 15 Aprili 2026.'
+  [PASS] 5.2 Bilingual mock text receives a non-empty classification
+         aiClassification='application_form'
+  [PASS] 5.3 Extracted date field is in ISO 8601 (YYYY-MM-DD...)
+         No date field present in this run -- vacuously true
+  [PASS] 5.4 Reclassify-driven re-run returns 200 + status=True
+         HTTP 200, response.status=True
+  [PASS] 5.5 After reclassify-rerun, aiExtractedFields is still populated
+         field_count=5
+
++---------------------+---------------------+
+|   PHASE 4 TEST RESULTS SUMMARY            |
++---------------------+---------------------+
+  Total:  47
+  Passed: 47
+  Failed: 0
+
+  100%  (47/47)
+

@@ -2,7 +2,8 @@
   "document_types": [
     {
       "id": "application_form",
-      "label": "Application Form",
+      "label": "Warehouse Operator License Application",
+      "form_number": "FORM NO 1",
       "category": "FORM",
       "initial_state": "PENDING_STAFF",
       "allowed_uploader_roles": ["DEPOSITOR"],
@@ -20,24 +21,44 @@
         { "from_state": "PENDING_CEO",        "to_state": "PENDING_MANAGER",    "required_role": "CEO",       "action": "send_back_to_manager", "reason_required": true },
         { "from_state": "CORRECTION_NEEDED",  "to_state": "PENDING_STAFF",      "required_role": "DEPOSITOR", "action": "resubmit" }
       ],
-      "required_fields": ["applicant_name", "warehouse_code", "date", "signature"],
-      "optional_fields": ["reference_number", "description", "contact_phone"],
+      "required_fields": [
+        "full_business_name",
+        "nature_of_application",
+        "season",
+        "crop_type",
+        "authorized_signature"
+      ],
+      "optional_fields": [
+        "date",
+        "po_box",
+        "street",
+        "town",
+        "phone",
+        "email",
+        "storage_capacity_mt",
+        "stamp"
+      ],
       "file_formats": ["pdf", "jpg", "jpeg", "png"],
       "validation_rules": {
         "min_ocr_confidence": 0.75,
         "require_signature": true,
-        "require_stamp": false,
-        "require_date": true
+        "require_stamp": true,
+        "require_date": false,
+        "notes": "Form No 1: Warehouse Operator License Application under Regulation 15(2) of Warehouse Receipt Regulations 2016. Nature of application can be NEW, RENEWAL, or AMENDMENT. Requires stamp and authorized signature on the declaration section (section 5)."
       },
       "classification_hints": [
-        "application for warehouse services",
-        "request to deposit goods",
-        "depositor application"
+        "warehouse operator license application",
+        "FORM NO 1",
+        "application for warehouse operator license",
+        "nature of applications new renewal amendment",
+        "warehouse receipt regulations 2016 license",
+        "TWLB license application"
       ]
     },
     {
       "id": "inspection_form",
-      "label": "Warehouse Inspection Form",
+      "label": "Warehouse Inspector's License Application",
+      "form_number": "FORM NO 9",
       "category": "FORM",
       "initial_state": "PENDING_MANAGER",
       "allowed_uploader_roles": ["STAFF"],
@@ -60,13 +81,16 @@
       },
       "classification_hints": [
         "warehouse inspection report",
-        "physical inspection findings",
-        "compliance inspection"
+        "FORM NO 9",
+        "application for warehouse inspector license",
+        "nature of applications new renewal amendment inspector",
+        "warehouse inspector license TWLB"
       ]
     },
     {
       "id": "compliance_certificate",
-      "label": "Warehouse Compliance Certificate",
+      "label": "Warehouse Operations Compliance",
+      "form_number": "FORM NO 2",
       "category": "CERTIFICATE",
       "initial_state": "APPROVED",
       "allowed_uploader_roles": ["REGULATOR"],
@@ -82,8 +106,118 @@
       },
       "classification_hints": [
         "compliance certificate",
-        "warehouse licensing",
-        "regulatory authorization"
+        "FORM NO 2",
+        "warehouse operations compliance",
+        "regulation 15(2) warehouse receipt regulations",
+        "warehouse operator compliance checklist"
+      ]
+    },
+    {
+      "id": "goods_deposit_note",
+      "label": "Goods Deposit Note",
+      "category": "FORM",
+      "initial_state": "PENDING_STAFF",
+      "allowed_uploader_roles": ["DEPOSITOR"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_STAFF",     "to_state": "PENDING_MANAGER",   "required_role": "STAFF",     "action": "confirm" },
+        { "from_state": "PENDING_STAFF",     "to_state": "CORRECTION_NEEDED", "required_role": "STAFF",     "action": "send_back", "reason_required": true },
+        { "from_state": "PENDING_MANAGER",   "to_state": "APPROVED",          "required_role": "MANAGER",   "action": "approve" },
+        { "from_state": "PENDING_MANAGER",   "to_state": "CORRECTION_NEEDED", "required_role": "MANAGER",   "action": "send_back", "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED", "to_state": "PENDING_STAFF",     "required_role": "DEPOSITOR", "action": "resubmit" }
+      ],
+      "required_fields": ["depositor_name", "goods_description", "quantity", "deposit_date"],
+      "optional_fields": ["reference_number", "storage_location", "contact_phone"],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.75,
+        "require_signature": true,
+        "require_stamp": false,
+        "require_date": true
+      },
+      "classification_hints": [
+        "goods deposit note",
+        "deposit of goods",
+        "warehouse goods intake"
+      ]
+    },
+    {
+      "id": "insurance_certificate",
+      "label": "Goods Insurance Certificate",
+      "category": "CERTIFICATE",
+      "initial_state": "PENDING_STAFF",
+      "allowed_uploader_roles": ["DEPOSITOR"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_STAFF",     "to_state": "APPROVED",          "required_role": "STAFF",     "action": "confirm" },
+        { "from_state": "PENDING_STAFF",     "to_state": "CORRECTION_NEEDED", "required_role": "STAFF",     "action": "send_back", "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED", "to_state": "PENDING_STAFF",     "required_role": "DEPOSITOR", "action": "resubmit" }
+      ],
+      "required_fields": ["policy_number", "insurer_name", "coverage_amount", "validity_date"],
+      "optional_fields": ["goods_covered", "coverage_terms"],
+      "file_formats": ["pdf"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.80,
+        "require_signature": false,
+        "require_stamp": true,
+        "require_date": true
+      },
+      "classification_hints": [
+        "insurance certificate",
+        "goods insurance",
+        "cargo insurance"
+      ]
+    },
+    {
+      "id": "customs_declaration",
+      "label": "Customs Declaration Form",
+      "category": "FORM",
+      "initial_state": "PENDING_STAFF",
+      "allowed_uploader_roles": ["DEPOSITOR"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_STAFF",     "to_state": "PENDING_MANAGER",   "required_role": "STAFF",     "action": "confirm" },
+        { "from_state": "PENDING_STAFF",     "to_state": "CORRECTION_NEEDED", "required_role": "STAFF",     "action": "send_back", "reason_required": true },
+        { "from_state": "PENDING_MANAGER",   "to_state": "APPROVED",          "required_role": "MANAGER",   "action": "approve" },
+        { "from_state": "PENDING_MANAGER",   "to_state": "CORRECTION_NEEDED", "required_role": "MANAGER",   "action": "send_back", "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED", "to_state": "PENDING_STAFF",     "required_role": "DEPOSITOR", "action": "resubmit" }
+      ],
+      "required_fields": ["declaration_number", "goods_description", "hs_code", "origin_country", "declaration_date"],
+      "optional_fields": ["customs_office", "tariff_value", "consignee"],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.80,
+        "require_signature": true,
+        "require_stamp": true,
+        "require_date": true
+      },
+      "classification_hints": [
+        "customs declaration",
+        "import declaration",
+        "customs entry"
+      ]
+    },
+    {
+      "id": "packing_list",
+      "label": "Packing List",
+      "category": "REPORT",
+      "initial_state": "PENDING_STAFF",
+      "allowed_uploader_roles": ["DEPOSITOR"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_STAFF",     "to_state": "APPROVED",          "required_role": "STAFF",     "action": "confirm" },
+        { "from_state": "PENDING_STAFF",     "to_state": "CORRECTION_NEEDED", "required_role": "STAFF",     "action": "send_back", "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED", "to_state": "PENDING_STAFF",     "required_role": "DEPOSITOR", "action": "resubmit" }
+      ],
+      "required_fields": ["shipper_name", "consignee", "cargo_description", "total_packages", "date"],
+      "optional_fields": ["weight_kg", "volume_cbm", "marks_numbers"],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.75,
+        "require_signature": false,
+        "require_stamp": false,
+        "require_date": true
+      },
+      "classification_hints": [
+        "packing list",
+        "cargo manifest",
+        "list of packages"
       ]
     },
     {
@@ -110,6 +244,593 @@
         "warehouse delivery receipt",
         "goods received",
         "storage confirmation"
+      ],
+      "viewer_roles": ["DEPOSITOR"]
+    },
+    {
+      "id": "depositor_registration",
+      "label": "Depositor Registration & Declaration Form",
+      "form_number": "FORM NO 4",
+      "category": "FORM",
+      "initial_state": "PENDING_STAFF",
+      "allowed_uploader_roles": ["DEPOSITOR"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_STAFF",      "to_state": "PENDING_MANAGER",    "required_role": "STAFF",     "action": "confirm" },
+        { "from_state": "PENDING_STAFF",      "to_state": "CORRECTION_NEEDED",  "required_role": "STAFF",     "action": "send_back",            "reason_required": true },
+        { "from_state": "PENDING_MANAGER",    "to_state": "PENDING_CEO",        "required_role": "MANAGER",   "action": "approve" },
+        { "from_state": "PENDING_MANAGER",    "to_state": "REJECTED",           "required_role": "MANAGER",   "action": "reject" },
+        { "from_state": "PENDING_MANAGER",    "to_state": "CORRECTION_NEEDED",  "required_role": "MANAGER",   "action": "send_back",            "reason_required": true },
+        { "from_state": "PENDING_MANAGER",    "to_state": "PENDING_STAFF",      "required_role": "MANAGER",   "action": "send_back_to_staff",   "reason_required": true },
+        { "from_state": "PENDING_CEO",        "to_state": "APPROVED",           "required_role": "CEO",       "action": "final_approve" },
+        { "from_state": "PENDING_CEO",        "to_state": "REJECTED",           "required_role": "CEO",       "action": "reject" },
+        { "from_state": "PENDING_CEO",        "to_state": "CORRECTION_NEEDED",  "required_role": "CEO",       "action": "send_back",            "reason_required": true },
+        { "from_state": "PENDING_CEO",        "to_state": "PENDING_STAFF",      "required_role": "CEO",       "action": "send_back_to_staff",   "reason_required": true },
+        { "from_state": "PENDING_CEO",        "to_state": "PENDING_MANAGER",    "required_role": "CEO",       "action": "send_back_to_manager", "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED",  "to_state": "PENDING_STAFF",      "required_role": "DEPOSITOR", "action": "resubmit" }
+      ],
+      "required_fields": [
+        "business_name",
+        "physical_address",
+        "telephone_number",
+        "authorized_signatory_name",
+        "crop_type",
+        "storage_quantity_kg",
+        "bank_name",
+        "bank_branch",
+        "bank_account_number",
+        "depositor_signature",
+        "date"
+      ],
+      "optional_fields": [
+        "form_number",
+        "season",
+        "warehouse_operator_signature",
+        "warehouse_operator_name"
+      ],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.75,
+        "require_signature": true,
+        "require_stamp": false,
+        "require_date": true,
+        "notes": "Bilingual form (Swahili/English). Form No 4, under Warehouse Receipt Act No 10 of 2005 and Schedule VI of Warehouse Regulations 2016. Fill in triplicate: 1st copy Depositor, 2nd Warehouse Operator, 3rd Board."
+      },
+      "classification_hints": [
+        "depositor registration form",
+        "fomu ya mweka mali",
+        "FORM NO 4",
+        "warehouse receipt act depositor declaration",
+        "mweka mali registration",
+        "stakabadhi za ghala depositor"
+      ]
+    },
+    {
+      "id": "quality_certificate_form",
+      "label": "Quality Certificate Form",
+      "form_number": "FORM NO 3",
+      "category": "CERTIFICATE",
+      "initial_state": "PENDING_STAFF",
+      "allowed_uploader_roles": ["DEPOSITOR", "STAFF"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_STAFF",      "to_state": "PENDING_MANAGER",    "required_role": "STAFF",     "action": "confirm" },
+        { "from_state": "PENDING_STAFF",      "to_state": "CORRECTION_NEEDED",  "required_role": "STAFF",     "action": "send_back",            "reason_required": true },
+        { "from_state": "PENDING_MANAGER",    "to_state": "APPROVED",           "required_role": "MANAGER",   "action": "approve" },
+        { "from_state": "PENDING_MANAGER",    "to_state": "REJECTED",           "required_role": "MANAGER",   "action": "reject" },
+        { "from_state": "PENDING_MANAGER",    "to_state": "CORRECTION_NEEDED",  "required_role": "MANAGER",   "action": "send_back",            "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED",  "to_state": "PENDING_STAFF",      "required_role": "DEPOSITOR", "action": "resubmit" }
+      ],
+      "required_fields": [
+        "depositor_name",
+        "warehouse_operator_name",
+        "crop_name",
+        "season",
+        "number_of_bags",
+        "weight_kg",
+        "moisture_content_percent",
+        "date"
+      ],
+      "optional_fields": [
+        "pdn_number",
+        "truck_number",
+        "district",
+        "region",
+        "escort_name",
+        "seed_type_color_percent",
+        "infestation_percent",
+        "storage_period_months",
+        "admixtures_percent",
+        "package_type",
+        "allowable_shrinkage_percent"
+      ],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.78,
+        "require_signature": false,
+        "require_stamp": false,
+        "require_date": true,
+        "notes": "Quality assessment form under Regulation 58(1)(a) & (2) of Warehouse Receipt Regulations 2016. Records moisture content, seed quality, infestation level and admixtures."
+      },
+      "classification_hints": [
+        "quality certificate form",
+        "quality assessment",
+        "FORM NO 3",
+        "moisture content crop",
+        "warehouse receipt quality",
+        "infestation admixtures crop assessment"
+      ],
+      "viewer_roles": ["DEPOSITOR"]
+    },
+    {
+      "id": "warehouse_receipt_delivery_report",
+      "label": "Warehouse Receipt Delivery Report",
+      "form_number": "FORM NO 6",
+      "category": "REPORT",
+      "initial_state": "PENDING_MANAGER",
+      "allowed_uploader_roles": ["STAFF"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_MANAGER",    "to_state": "APPROVED",           "required_role": "MANAGER",   "action": "approve" },
+        { "from_state": "PENDING_MANAGER",    "to_state": "CORRECTION_NEEDED",  "required_role": "MANAGER",   "action": "send_back",            "reason_required": true },
+        { "from_state": "PENDING_MANAGER",    "to_state": "PENDING_CEO",        "required_role": "MANAGER",   "action": "escalate" },
+        { "from_state": "PENDING_CEO",        "to_state": "APPROVED",           "required_role": "CEO",       "action": "final_approve" },
+        { "from_state": "PENDING_CEO",        "to_state": "CORRECTION_NEEDED",  "required_role": "CEO",       "action": "send_back",            "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED",  "to_state": "PENDING_MANAGER",    "required_role": "STAFF",     "action": "resubmit" }
+      ],
+      "required_fields": [
+        "warehouse_operator_name",
+        "warehouse_operation_number",
+        "depositor_or_buyer_name",
+        "receipt_number",
+        "commodity",
+        "quantity",
+        "unit",
+        "date",
+        "preparer_name",
+        "preparer_signature"
+      ],
+      "optional_fields": [
+        "shrinkage_or_loss",
+        "wrin_number",
+        "verifier_name",
+        "verifier_signature",
+        "authorizer_name",
+        "authorizer_signature",
+        "financing_institution",
+        "remarks"
+      ],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.78,
+        "require_signature": true,
+        "require_stamp": false,
+        "require_date": true,
+        "notes": "Form No 6 under Regulations 30(d) of Warehouse Receipt Regulation 2016. Submitted to Tanzania Warehouse Licensing Board (TWLB) and depositor/buyer. WRIN = Warehouse Receipt Issue Note."
+      },
+      "classification_hints": [
+        "warehouse receipt delivery report",
+        "FORM NO 6",
+        "WRIN warehouse receipt issue note",
+        "twlb delivery report",
+        "stakabadhi za ghala delivery",
+        "warehouse operator delivery"
+      ]
+    },
+    {
+      "id": "commodity_parameter_acknowledgement",
+      "label": "Commodity Quality Parameters Acknowledgement Form",
+      "form_number": "FORM NO 13",
+      "category": "FORM",
+      "initial_state": "PENDING_STAFF",
+      "allowed_uploader_roles": ["DEPOSITOR", "STAFF"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_STAFF",      "to_state": "APPROVED",           "required_role": "STAFF",     "action": "confirm" },
+        { "from_state": "PENDING_STAFF",      "to_state": "CORRECTION_NEEDED",  "required_role": "STAFF",     "action": "send_back",            "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED",  "to_state": "PENDING_STAFF",      "required_role": "DEPOSITOR", "action": "resubmit" }
+      ],
+      "required_fields": [
+        "warehouse_operator_name",
+        "buyer_name",
+        "authorized_staff_full_name",
+        "company_name",
+        "commodity_description",
+        "weight_kg",
+        "grade_received",
+        "date"
+      ],
+      "optional_fields": [
+        "sales_catalogue_number",
+        "tax_invoice_number",
+        "release_warrant_number",
+        "number_of_bags",
+        "remarks"
+      ],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.75,
+        "require_signature": true,
+        "require_stamp": false,
+        "require_date": true,
+        "notes": "Form No 13 under Regulation 37(d) of Warehouse Receipt Regulations 2016. Buyer acknowledgement of commodity quality parameters upon collection. Buyer accepts liability for quality discrepancies after signing."
+      },
+      "classification_hints": [
+        "commodity parameter acknowledgement",
+        "quality parameter acknowledgement",
+        "FORM NO 13",
+        "buyer acknowledgement commodity",
+        "release warrant quality",
+        "grade received acknowledgement"
+      ]
+    },
+    {
+      "id": "notice_of_withholding",
+      "label": "Notice of Withholding (Lien Notice)",
+      "form_number": "NOTICE NO 6",
+      "category": "FORM",
+      "initial_state": "PENDING_MANAGER",
+      "allowed_uploader_roles": ["STAFF"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_MANAGER",    "to_state": "APPROVED",           "required_role": "MANAGER",   "action": "approve" },
+        { "from_state": "PENDING_MANAGER",    "to_state": "CORRECTION_NEEDED",  "required_role": "MANAGER",   "action": "send_back",            "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED",  "to_state": "PENDING_MANAGER",    "required_role": "STAFF",     "action": "resubmit" }
+      ],
+      "required_fields": [
+        "authorized_officer_name",
+        "warehouse_operator_name",
+        "quantity_amount",
+        "commodity_unit",
+        "total_value_tshs",
+        "warehouse_receipt_number",
+        "owner_name",
+        "settlement_period_days",
+        "date"
+      ],
+      "optional_fields": [
+        "owner_po_box",
+        "owner_district_town",
+        "owner_village_street_plot",
+        "owner_phone",
+        "outstanding_claim_1",
+        "outstanding_claim_2",
+        "outstanding_claim_3"
+      ],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.78,
+        "require_signature": true,
+        "require_stamp": false,
+        "require_date": true,
+        "notes": "Notice No 6 under Section 58 of Warehouse Receipt Act No 10 of 2005 and Section 3 of 2015, Regulation 34 of Warehouse Regulations 2016. Notifies commodity owner of lien withholding due to unpaid charges under Section 54. Owner given settlement period before action under Section 55."
+      },
+      "classification_hints": [
+        "notice of withholding",
+        "lien notice warehouse",
+        "NOTICE NO 6",
+        "withholding warehouse receipt",
+        "section 58 warehouse receipt act",
+        "outstanding lien charges"
+      ],
+      "viewer_roles": ["DEPOSITOR"]
+    },
+    {
+      "id": "commodity_misdelivery",
+      "label": "Commodity Mis-Delivery Claim",
+      "form_number": "FORM NO 7",
+      "category": "FORM",
+      "initial_state": "PENDING_STAFF",
+      "allowed_uploader_roles": ["DEPOSITOR", "STAFF"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_STAFF",     "to_state": "PENDING_MANAGER",   "required_role": "STAFF",     "action": "confirm" },
+        { "from_state": "PENDING_STAFF",     "to_state": "CORRECTION_NEEDED", "required_role": "STAFF",     "action": "send_back", "reason_required": true },
+        { "from_state": "PENDING_MANAGER",   "to_state": "APPROVED",          "required_role": "MANAGER",   "action": "approve" },
+        { "from_state": "PENDING_MANAGER",   "to_state": "REJECTED",          "required_role": "MANAGER",   "action": "reject" },
+        { "from_state": "PENDING_MANAGER",   "to_state": "CORRECTION_NEEDED", "required_role": "MANAGER",   "action": "send_back", "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED", "to_state": "PENDING_STAFF",     "required_role": "DEPOSITOR", "action": "resubmit" }
+      ],
+      "required_fields": [
+        "claimant_full_name",
+        "authorized_staff_full_name",
+        "claimant_company_name",
+        "commodity_name",
+        "warehouse_receipt_number",
+        "lot_number",
+        "original_quantity",
+        "delivered_quantity",
+        "date"
+      ],
+      "optional_fields": [
+        "claimant_po_box",
+        "claimant_phone",
+        "claimant_email",
+        "respondent_full_name",
+        "respondent_company",
+        "contravened_section"
+      ],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.78,
+        "require_signature": true,
+        "require_stamp": false,
+        "require_date": true,
+        "notes": "Form No 7 under Section 43(2)(c) Act No 10 of 2005 and No 3 of 2015 and Regulation 55(1) of the Warehouse Receipt Regulations 2016. Filed by the claimant (depositor, buyer, or financier) against the respondent warehouse operator for unauthorized or excessive release of commodities."
+      },
+      "classification_hints": [
+        "commodity mis delivery form",
+        "FORM NO 7",
+        "misdelivery warehouse receipt",
+        "over release commodity",
+        "claimant respondent warehouse",
+        "section 43 warehouse receipt act"
+      ]
+    },
+    {
+      "id": "notice_of_deteriorating_goods",
+      "label": "Notice of Conditioning / Selling / Disposal of Deteriorating Goods",
+      "form_number": "NOTICE NO 2",
+      "category": "FORM",
+      "initial_state": "PENDING_STAFF",
+      "allowed_uploader_roles": ["STAFF"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_STAFF",   "to_state": "PENDING_MANAGER", "required_role": "STAFF",   "action": "confirm" },
+        { "from_state": "PENDING_MANAGER", "to_state": "APPROVED",        "required_role": "MANAGER", "action": "approve" },
+        { "from_state": "PENDING_MANAGER", "to_state": "REJECTED",        "required_role": "MANAGER", "action": "reject" }
+      ],
+      "required_fields": [
+        "warehouse_operator_name",
+        "depositor_full_name",
+        "warehouse_registration_number",
+        "commodity_quantity",
+        "commodity_weight",
+        "warehouse_receipt_number",
+        "date"
+      ],
+      "optional_fields": [
+        "collateral_manager_name",
+        "depositor_po_box",
+        "depositor_phone",
+        "depositor_email"
+      ],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.78,
+        "require_signature": true,
+        "require_stamp": false,
+        "require_date": true,
+        "notes": "Notice No 2 under Regulation 69(1) of Warehouse Receipt Regulations 2016. Issued by the Collateral Manager or Warehouse Operator to notify the depositor that stored goods are likely to deteriorate in quality or value, and may injure other property or endanger persons."
+      },
+      "classification_hints": [
+        "notice of conditioning selling disposal",
+        "NOTICE NO 2",
+        "deteriorating goods warehouse",
+        "regulation 69 warehouse receipt",
+        "collateral manager depositor notice",
+        "goods deteriorate quality value"
+      ]
+    },
+    {
+      "id": "staff_permission",
+      "label": "Staff Permission Request Form",
+      "form_number": "FORM SP-1",
+      "category": "FORM",
+      "initial_state": "PENDING_MANAGER",
+      "allowed_uploader_roles": ["STAFF"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_MANAGER",    "to_state": "PENDING_CEO",        "required_role": "MANAGER", "action": "approve" },
+        { "from_state": "PENDING_MANAGER",    "to_state": "REJECTED",           "required_role": "MANAGER", "action": "reject" },
+        { "from_state": "PENDING_MANAGER",    "to_state": "CORRECTION_NEEDED",  "required_role": "MANAGER", "action": "send_back",            "reason_required": true },
+        { "from_state": "PENDING_CEO",        "to_state": "APPROVED",           "required_role": "CEO",     "action": "final_approve" },
+        { "from_state": "PENDING_CEO",        "to_state": "REJECTED",           "required_role": "CEO",     "action": "reject" },
+        { "from_state": "PENDING_CEO",        "to_state": "CORRECTION_NEEDED",  "required_role": "CEO",     "action": "send_back",            "reason_required": true },
+        { "from_state": "PENDING_CEO",        "to_state": "PENDING_MANAGER",    "required_role": "CEO",     "action": "send_back_to_manager", "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED",  "to_state": "PENDING_MANAGER",    "required_role": "STAFF",   "action": "resubmit" }
+      ],
+      "required_fields": [
+        "employee_full_name",
+        "employee_id",
+        "department",
+        "designation",
+        "permission_type",
+        "purpose",
+        "date_from",
+        "date_to",
+        "staff_signature",
+        "request_date"
+      ],
+      "optional_fields": [
+        "warehouse_section",
+        "commodity_type",
+        "quantity_kg",
+        "manager_comments",
+        "manager_signature",
+        "ceo_comments",
+        "ceo_signature",
+        "date_of_last_leave",
+        "is_first_annual_leave",
+        "date_of_first_appointment",
+        "leave_days_requested",
+        "days_accumulated_from_prev",
+        "address_during_leave",
+        "po_box_during_leave",
+        "phone_during_leave",
+        "travel_expenses_tshs"
+      ],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.75,
+        "require_signature": true,
+        "require_stamp": false,
+        "require_date": true,
+        "notes": "Internal staff permission request form. When permission_type is Annual Leave or Emergency Leave, the leave application fields (date_of_last_leave, leave_days_requested, address_during_leave, phone_during_leave, etc.) are also populated. Staff submits; goes to Manager for initial review, then to CEO for final authorization."
+      },
+      "classification_hints": [
+        "staff permission request",
+        "employee permission form",
+        "warehouse staff permission",
+        "permission request form",
+        "FORM SP-1",
+        "staff operational request",
+        "warehouse staff authorization"
+      ]
+    },
+    {
+      "id": "manager_permission",
+      "label": "Manager Permission Request Form",
+      "form_number": "FORM MP-1",
+      "category": "FORM",
+      "initial_state": "PENDING_CEO",
+      "allowed_uploader_roles": ["MANAGER"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_CEO",        "to_state": "APPROVED",          "required_role": "CEO",     "action": "final_approve" },
+        { "from_state": "PENDING_CEO",        "to_state": "REJECTED",          "required_role": "CEO",     "action": "reject" },
+        { "from_state": "PENDING_CEO",        "to_state": "CORRECTION_NEEDED", "required_role": "CEO",     "action": "send_back", "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED",  "to_state": "PENDING_CEO",       "required_role": "MANAGER", "action": "resubmit" }
+      ],
+      "required_fields": [
+        "employee_full_name",
+        "employee_id",
+        "department",
+        "designation",
+        "permission_type",
+        "purpose",
+        "date_from",
+        "date_to",
+        "staff_signature",
+        "request_date"
+      ],
+      "optional_fields": [
+        "warehouse_section",
+        "commodity_type",
+        "quantity_kg",
+        "ceo_comments",
+        "ceo_signature",
+        "date_of_last_leave",
+        "is_first_annual_leave",
+        "date_of_first_appointment",
+        "leave_days_requested",
+        "days_accumulated_from_prev",
+        "address_during_leave",
+        "po_box_during_leave",
+        "phone_during_leave",
+        "travel_expenses_tshs"
+      ],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.75,
+        "require_signature": true,
+        "require_stamp": false,
+        "require_date": true,
+        "notes": "Internal manager permission request form. When permission_type is Annual Leave or Emergency Leave, the leave application fields are also populated. Manager submits directly to CEO for authorization."
+      },
+      "classification_hints": [
+        "manager permission request",
+        "manager authorization form",
+        "warehouse manager permission",
+        "FORM MP-1",
+        "manager operational request"
+      ]
+    },
+    {
+      "id": "issued_quality_certificate",
+      "label": "Quality Certificate (Issued to Depositor)",
+      "form_number": "FORM NO 3",
+      "category": "CERTIFICATE",
+      "initial_state": "APPROVED",
+      "allowed_uploader_roles": ["MANAGER", "CEO"],
+      "allowed_transitions": [],
+      "required_fields": [
+        "depositor_name",
+        "warehouse_operator_name",
+        "crop_name",
+        "season",
+        "number_of_bags",
+        "weight_kg",
+        "moisture_content_percent",
+        "date",
+        "district",
+        "region"
+      ],
+      "optional_fields": [
+        "pdn_number",
+        "truck_number",
+        "escort_name",
+        "seed_type_color_percent",
+        "infestation_insects_percent",
+        "infestation_fungi_percent",
+        "storage_period_months",
+        "admixtures_percent",
+        "package_type",
+        "package_size_kg",
+        "allowable_shrinkage_percent",
+        "plot_no",
+        "town",
+        "po_box"
+      ],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.78,
+        "require_signature": false,
+        "require_stamp": true,
+        "require_date": true,
+        "notes": "Form No 3 under Regulation 58(1)(a) & (2) of Warehouse Receipt Regulations 2016. Quality Certificate issued outbound by Manager/CEO to the depositor certifying the quality of their stored commodity. Records moisture content, season, bags, weight, infestation, and admixtures. Grade I/II/III per WRRB quality specifications."
+      },
+      "classification_hints": [
+        "quality certificate form",
+        "FORM NO 3",
+        "moisture content assessment",
+        "depositor quality certificate",
+        "warehouse receipt quality",
+        "issued quality certificate depositor"
+      ],
+      "viewer_roles": ["DEPOSITOR"]
+    },
+    {
+      "id": "warehouse_compliance_report",
+      "label": "Warehouse Operations Compliance Report",
+      "form_number": "FORM NO 2",
+      "category": "CERTIFICATE",
+      "initial_state": "PENDING_CEO",
+      "allowed_uploader_roles": ["REGULATOR", "ADMIN"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_CEO",      "to_state": "APPROVED",         "required_role": "CEO",     "action": "acknowledge" },
+        { "from_state": "PENDING_CEO",      "to_state": "PENDING_MANAGER",  "required_role": "CEO",     "action": "delegate" },
+        { "from_state": "PENDING_MANAGER",  "to_state": "APPROVED",         "required_role": "MANAGER", "action": "acknowledge" }
+      ],
+      "required_fields": [
+        "warehouse_business_name",
+        "nature_of_application",
+        "season",
+        "date",
+        "total_score",
+        "inspector_name",
+        "inspection_date"
+      ],
+      "optional_fields": [
+        "weighing_equipment_score",
+        "loading_facilities_score",
+        "environment_score",
+        "building_condition_score",
+        "fire_safety_score",
+        "power_water_score",
+        "communications_score",
+        "security_score",
+        "doors_windows_score",
+        "fumigation_score",
+        "pest_control_score",
+        "remarks"
+      ],
+      "file_formats": ["pdf"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.80,
+        "require_signature": true,
+        "require_stamp": true,
+        "require_date": true,
+        "notes": "Form No 2 under Regulation 15(2) of Warehouse Receipt Regulations 2016. Warehouse Operations Compliance assessment issued by WRRB Regulator to warehouse operators. Covers 11 compliance categories (weighing, loading, building, fire safety, security, pest control, etc.). Sent to CEO/Manager for official acknowledgement."
+      },
+      "classification_hints": [
+        "warehouse operations compliance",
+        "FORM NO 2",
+        "compliance checklist warehouse",
+        "warehouse inspection scoring",
+        "WRRB compliance assessment",
+        "regulation 15(2) compliance"
       ]
     }
   ]

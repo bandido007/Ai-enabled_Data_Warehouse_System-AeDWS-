@@ -62,6 +62,8 @@ class DocumentTypeDefinition:
     file_formats: List[str] = field(default_factory=list)
     validation_rules: Dict[str, Any] = field(default_factory=dict)
     classification_hints: List[str] = field(default_factory=list)
+    form_number: str = ""
+    viewer_roles: List[str] = field(default_factory=list)
 
 
 def _validate_type_entry(entry: Dict[str, Any], index: int) -> None:
@@ -163,6 +165,8 @@ def _load_from_disk() -> Dict[str, DocumentTypeDefinition]:
             file_formats=list(entry["file_formats"]),
             validation_rules=dict(entry["validation_rules"]),
             classification_hints=list(entry["classification_hints"]),
+            form_number=entry.get("form_number", ""),
+            viewer_roles=list(entry.get("viewer_roles", [])),
         )
 
     return registry

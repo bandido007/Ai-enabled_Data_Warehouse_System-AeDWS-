@@ -1,5 +1,5 @@
 import enum
-from datetime import date
+from datetime import date, datetime
 from typing import List
 from uuid import UUID
 
@@ -82,8 +82,8 @@ class BaseNonPagedFilteringSerializer(Schema):
 class BaseSerializer(Schema):
     id: int
     unique_id: UUID
-    created_date: date
-    updated_date: date
+    created_date: datetime
+    updated_date: datetime
     is_active: bool
     created_by: UserResponse | None = None
 

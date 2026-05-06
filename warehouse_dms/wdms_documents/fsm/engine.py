@@ -159,7 +159,20 @@ class FSMEngine:
         else:
             document.current_correction_note = ""
 
-        document.save(update_fields=["status", "current_correction_note", "updated_date"])
+        save_fields = ["status", "current_correction_note", "updated_date"]
+
+        # On resubmit with edited_fields: merge corrections into extracted fields
+        # and clear AI summary so the AI pipeline re-analyses the corrected data.
+        if action == "resubmit" and edited_fields:
+            existing = document.ai_extracted_fields or {}
+            existing.update(edited_fields)
+            document.ai_extracted_fields = existing
+            document.ai_summary = ""
+            document.ai_review_notes = ""
+            document.ai_confidence_score = None
+            save_fields += ["ai_extracted_fields", "ai_summary", "ai_review_notes", "ai_confidence_score"]
+
+        document.save(update_fields=save_fields)
 
         # Step 4: Audit log
         wt = WorkflowTransition.objects.create(

@@ -24,14 +24,47 @@ class UserProfileTableSerializer(BaseSerializer):
     has_been_verified: bool = False
     preferred_language: str = "en"
     tenant_id: Optional[int] = None
+    tenant_unique_id: Optional[UUID] = None
     tenant_name: Optional[str] = None
     warehouse_id: Optional[int] = None
+    warehouse_unique_id: Optional[UUID] = None
     warehouse_name: Optional[str] = None
 
     @model_validator(mode="before")
     @classmethod
     def extract_fields(cls, data):
         if hasattr(data, "profile_user"):
+            prefetched_roles = []
+            prefetched_cache = getattr(data.profile_user, "_prefetched_objects_cache", {})
+            if isinstance(prefetched_cache, dict):
+                prefetched_roles = prefetched_cache.get("role_user", []) or []
+
+            active_assignment = next(
+                (
+                    assignment
+                    for assignment in prefetched_roles
+                    if getattr(assignment, "is_active", False)
+                    and getattr(getattr(assignment, "user_with_role_role", None), "is_active", False)
+                ),
+                None,
+            )
+
+            if active_assignment is None:
+                active_assignment = (
+                    data.profile_user.role_user.filter(
+                        is_active=True,
+                        user_with_role_role__is_active=True,
+                    )
+                    .select_related("user_with_role_role")
+                    .first()
+                )
+
+            effective_role = (
+                active_assignment.user_with_role_role.name
+                if active_assignment and active_assignment.user_with_role_role
+                else data.account_type
+            )
+
             return {
                 "id": data.pk,
                 "unique_id": data.unique_id,
@@ -51,13 +84,15 @@ class UserProfileTableSerializer(BaseSerializer):
                 "email": data.profile_user.email,
                 "first_name": data.profile_user.first_name,
                 "last_name": data.profile_user.last_name,
-                "account_type": data.account_type,
+                "account_type": effective_role,
                 "phone_number": data.phone_number,
                 "has_been_verified": data.has_been_verified,
                 "preferred_language": data.preferred_language,
                 "tenant_id": data.tenant_id,
+                "tenant_unique_id": data.tenant.unique_id if data.tenant else None,
                 "tenant_name": data.tenant.name if data.tenant else None,
                 "warehouse_id": data.warehouse_id,
+                "warehouse_unique_id": data.warehouse.unique_id if data.warehouse else None,
                 "warehouse_name": data.warehouse.name if data.warehouse else None,
             }
         return data
@@ -131,3 +166,20 @@ class AdminCreateUserInputSerializer(BaseSchema):
     role_name: str = "DEPOSITOR"
     tenant_unique_id: Optional[str] = None
     warehouse_unique_id: Optional[str] = None
+
+
+class AdminUpdateUserInputSerializer(BaseSchema):
+    username: str
+    email: str
+    first_name: str = ""
+    last_name: str = ""
+    phone_number: str = ""
+    account_type: str = "DEPOSITOR"
+    role_name: str = "DEPOSITOR"
+    has_been_verified: bool = True
+    tenant_unique_id: Optional[str] = None
+    warehouse_unique_id: Optional[str] = None
+
+
+class AdminResetPasswordInputSerializer(BaseSchema):
+    new_password: str

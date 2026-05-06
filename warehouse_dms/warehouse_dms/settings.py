@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Third-party
+    "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
     "ninja",
@@ -45,6 +46,7 @@ MIDDLEWARE = [
     # in front for the admin CSS/JS to render. Must sit immediately after
     # SecurityMiddleware per the Whitenoise docs.
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -173,7 +175,7 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 # ── Email (SMTP) ──────────────────────────────────────────────────────────────
 
 EMAIL_BACKEND = config.get(
-    "EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend"
+    "EMAIL_BACKEND", "django.core.mail.backends.dummy.EmailBackend"
 )
 EMAIL_HOST = config.get("EMAIL_HOST", "localhost")
 EMAIL_PORT = int(config.get("EMAIL_PORT", 1025))
@@ -191,6 +193,11 @@ AFRICASTALKING_SENDER_ID = config.get("AFRICASTALKING_SENDER_ID", "")
 # ── Frontend domain (used in notification links) ──────────────────────────────
 
 FRONTEND_DOMAIN = config.get("FRONTEND_DOMAIN", "http://localhost:5173")
+
+# ── CORS ─────────────────────────────────────────────────────────────────────
+# Allow all origins (any localhost port, external IPs, etc.)
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 # ── pgvector ──────────────────────────────────────────────────────────────────
 # The pgvector extension is enabled via the 0001_initial migration in

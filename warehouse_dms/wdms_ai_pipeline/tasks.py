@@ -400,10 +400,16 @@ def generate_review(self, document_id: int) -> int:
         type_def = get_document_type(
             document.ai_classification or document.document_type_id
         )
+        is_form_fill = not bool(document.file)
+        required_fields = list(type_def.required_fields) if type_def else []
+        import datetime as _dt
         result = services.llm.generate_review(
             text=document.extracted_text,
             extracted_fields=document.ai_extracted_fields or {},
             document_type_label=type_def.label if type_def else "Unknown",
+            required_fields=required_fields,
+            is_form_fill=is_form_fill,
+            today=_dt.date.today().isoformat(),
         )
         document.ai_review_notes = result.review
         document.ai_summary = result.summary
@@ -484,6 +490,22 @@ def trigger_ai_pre_review(document_id: int) -> None:
         classify_document.s(),
         extract_structured_fields.s(),
         generate_review.s(),
+        generate_embedding.s(),
+        signal_ai_review_complete.s(),
+    ).apply_async()
+
+
+def trigger_form_fill_ai_review(document_id: int) -> None:
+    """
+    Fire-and-forget: enqueue AI summary + embedding for a form-fill document.
+
+    Form-fill documents already have ``ai_extracted_fields`` set and no file,
+    so we skip OCR and classification and start directly from generate_review.
+    The review prompt handles None extracted_text gracefully — it renders the
+    summary from the structured fields JSON alone.
+    """
+    chain(
+        generate_review.s(document_id),
         generate_embedding.s(),
         signal_ai_review_complete.s(),
     ).apply_async()

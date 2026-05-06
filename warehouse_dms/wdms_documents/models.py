@@ -67,7 +67,7 @@ class Document(BaseModel):
     )
     document_type_id = models.CharField(max_length=100, db_index=True)
     title = models.CharField(max_length=500)
-    file = models.FileField(upload_to="documents/%Y/%m/")
+    file = models.FileField(upload_to="documents/%Y/%m/", null=True, blank=True)
     status = models.CharField(
         max_length=30,
         choices=DocumentStatus.choices,
@@ -98,6 +98,16 @@ class Document(BaseModel):
             models.Index(fields=["document_type_id", "status"]),
             models.Index(fields=["uploader", "status"]),
         ]
+
+    @property
+    def file_url(self) -> str | None:
+        """Expose file URL as a direct attribute so Pydantic from_attributes=True can read it."""
+        if self.file and self.file.name:
+            try:
+                return self.file.url
+            except Exception:
+                return None
+        return None
 
     def __str__(self):
         return f"{self.document_type_id}: {self.title} ({self.status})"

@@ -125,8 +125,15 @@ class GeminiLLMService(LLMServiceInterface):
         text: str,
         extracted_fields: Dict[str, Any],
         document_type_label: str,
+        required_fields: List[str] | None = None,
+        is_form_fill: bool = False,
+        today: str | None = None,
     ) -> ReviewResult:
-        prompt = review_prompt.render(text, extracted_fields, document_type_label)
+        prompt = review_prompt.render(
+            text, extracted_fields, document_type_label,
+            required_fields=required_fields, is_form_fill=is_form_fill,
+            today=today,
+        )
         parsed = self._call_structured(
             prompt,
             review_prompt.SCHEMA,
@@ -155,6 +162,25 @@ class GeminiLLMService(LLMServiceInterface):
     # Internals
     # ──────────────────────────────────────────────────────────────────────
 
+    @staticmethod
+    def _sanitize_vertex_schema(schema: dict) -> dict:
+        """Remove JSON Schema keys unsupported by Vertex AI's protobuf schema definition.
+
+        Vertex AI (google.cloud.aiplatform.v1beta1.Schema) only accepts a subset of JSON Schema.
+        Keys like ``additionalProperties``, ``$defs``, ``$schema``, ``$id``, and ``allOf`` are
+        not supported and will cause a ParseError when passed to GenerationConfig.
+        """
+        _UNSUPPORTED = {"additionalProperties", "$defs", "$schema", "$id", "allOf", "anyOf_unsupported"}
+        if isinstance(schema, dict):
+            return {
+                k: GeminiLLMService._sanitize_vertex_schema(v)
+                for k, v in schema.items()
+                if k not in _UNSUPPORTED
+            }
+        if isinstance(schema, list):
+            return [GeminiLLMService._sanitize_vertex_schema(item) for item in schema]
+        return schema
+
     def _call_structured(
         self,
         prompt: str,
@@ -165,11 +191,13 @@ class GeminiLLMService(LLMServiceInterface):
         from vertexai.generative_models import GenerationConfig  # type: ignore
 
         model = self._GenerativeModel(self._model_name)
-        # Vertex accepts Pydantic schemas directly via response_schema.
+        # Vertex AI's protobuf schema does not support all JSON Schema keywords.
+        # Strip unsupported keys (e.g. additionalProperties) before passing.
+        vertex_schema = self._sanitize_vertex_schema(schema_cls.model_json_schema())
         config = GenerationConfig(
             temperature=temperature,
             response_mime_type="application/json",
-            response_schema=schema_cls.model_json_schema(),
+            response_schema=vertex_schema,
         )
         response = model.generate_content(prompt, generation_config=config)
         raw = (response.text or "").strip()

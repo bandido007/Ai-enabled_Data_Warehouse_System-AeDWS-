@@ -45,7 +45,7 @@ except ImportError:
 # Configuration
 # ─────────────────────────────────────────────────────────────────────────────
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8001"
 API = f"{BASE_URL}/api/v1"
 TIMEOUT = 30
 SSE_TIMEOUT = 25                 # seconds to wait for Stage-0 SSE complete
@@ -133,6 +133,9 @@ def _post(url, payload=None, token=None, files=None, data=None):
     try:
         if files is not None:
             r = _session.post(url, headers=headers, files=files, data=data, timeout=TIMEOUT)
+        elif data is not None:
+            # Form-encoded request (e.g. confirm with soft_warning_override)
+            r = _session.post(url, headers=headers, data=data, timeout=TIMEOUT)
         else:
             r = _session.post(url, headers=headers, json=payload, timeout=TIMEOUT)
         return r.status_code, _safe_json(r)
@@ -1039,7 +1042,7 @@ def _print_summary():
 
 def _parse_args():
     p = argparse.ArgumentParser(description="Phase 4 API test runner")
-    p.add_argument("--base-url", default="http://localhost:8000",
+    p.add_argument("--base-url", default="http://localhost:8001",
                    help="Base URL of the running Django server")
     p.add_argument("--verbose", "-v", action="store_true",
                    help="Print response details for every test (not just failures)")

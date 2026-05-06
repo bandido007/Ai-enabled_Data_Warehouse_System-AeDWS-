@@ -7,7 +7,9 @@ from ninja import Query, Router
 
 from wdms_accounts.models import ActivateAccountTokenUser, ForgotPasswordRequestUser, UserProfile
 from wdms_accounts.serializers import (
+    AdminResetPasswordInputSerializer,
     AdminCreateUserInputSerializer,
+    AdminUpdateUserInputSerializer,
     ChangePasswordInputSerializer,
     ForgotPasswordInputSerializer,
     RegisterInputSerializer,
@@ -26,6 +28,31 @@ from wdms_utils.tokens import get_activation_token, get_forgot_password_token
 logger = logging.getLogger("wdms_logger")
 
 accounts_router = Router()
+
+
+def _resolve_assignment_scope(tenant_unique_id: str | None, warehouse_unique_id: str | None):
+    from wdms_tenants.models import Tenant, Warehouse
+
+    tenant = None
+    warehouse = None
+
+    if tenant_unique_id:
+        tenant = Tenant.objects.filter(unique_id=tenant_unique_id, is_active=True).first()
+        if not tenant:
+            raise ValueError("Tenant not found")
+
+    if warehouse_unique_id:
+        warehouse = Warehouse.objects.filter(unique_id=warehouse_unique_id, is_active=True).first()
+        if not warehouse:
+            raise ValueError("Warehouse not found")
+
+        if tenant and warehouse.tenant_id != tenant.id:
+            raise ValueError("Selected warehouse does not belong to the selected tenant")
+
+        if tenant is None:
+            tenant = warehouse.tenant
+
+    return tenant, warehouse
 
 
 # ── Registration ──────────────────────────────────────────────────────────────
@@ -246,6 +273,8 @@ def list_users(
     try:
         queryset = UserProfile.objects.select_related(
             "profile_user", "tenant", "warehouse", "created_by"
+        ).prefetch_related(
+            "profile_user__role_user__user_with_role_role"
         ).all()
         return get_paginated_and_non_paginated_data(
             queryset, filtering, UserProfilePagedResponseSerializer
@@ -296,19 +325,12 @@ def admin_create_user(request: HttpRequest, input: AdminCreateUserInputSerialize
                 profile.has_been_verified = True
                 profile.created_by = request.user
 
-                if input.tenant_unique_id:
-                    from wdms_tenants.models import Tenant
-                    tenant = Tenant.objects.filter(unique_id=input.tenant_unique_id).first()
-                    if tenant:
-                        profile.tenant = tenant
-
-                if input.warehouse_unique_id:
-                    from wdms_tenants.models import Warehouse
-                    warehouse = Warehouse.objects.filter(
-                        unique_id=input.warehouse_unique_id
-                    ).first()
-                    if warehouse:
-                        profile.warehouse = warehouse
+                tenant, warehouse = _resolve_assignment_scope(
+                    input.tenant_unique_id,
+                    input.warehouse_unique_id,
+                )
+                profile.tenant = tenant
+                profile.warehouse = warehouse
 
                 profile.save()
 
@@ -321,4 +343,145 @@ def admin_create_user(request: HttpRequest, input: AdminCreateUserInputSerialize
         )
     except Exception as e:
         logger.error(f"Admin create user error: {e}")
+        return BaseNonPagedResponseData(response=ResponseObject.get_response(2, str(e)))
+
+
+@accounts_router.put(
+    "/users/{unique_id}",
+    response=UserProfileNonPagedResponseSerializer,
+    auth=PermissionAuth(required_permissions=["manage_users"]),
+)
+def admin_update_user(request: HttpRequest, unique_id: str, input: AdminUpdateUserInputSerializer):
+    try:
+        profile = UserProfile.objects.select_related("profile_user").filter(
+            unique_id=unique_id,
+            is_active=True,
+        ).first()
+        if not profile:
+            return UserProfileNonPagedResponseSerializer(
+                response=ResponseObject.get_response(3, "User not found")
+            )
+
+        user = profile.profile_user
+
+        username_exists = User.objects.filter(username=input.username).exclude(pk=user.pk).exists()
+        if username_exists:
+            return UserProfileNonPagedResponseSerializer(
+                response=ResponseObject.get_response(0, "Username already taken")
+            )
+
+        email_exists = User.objects.filter(email=input.email).exclude(pk=user.pk).exists()
+        if email_exists:
+            return UserProfileNonPagedResponseSerializer(
+                response=ResponseObject.get_response(0, "Email already registered")
+            )
+
+        with transaction.atomic():
+            user.username = input.username
+            user.email = input.email
+            user.first_name = input.first_name
+            user.last_name = input.last_name
+            user.save()
+
+            tenant, warehouse = _resolve_assignment_scope(
+                input.tenant_unique_id,
+                input.warehouse_unique_id,
+            )
+
+            profile.phone_number = input.phone_number
+            profile.account_type = input.account_type
+            profile.has_been_verified = input.has_been_verified
+            profile.tenant = tenant
+            profile.warehouse = warehouse
+            profile.save()
+
+            mgmt = UserManagementService()
+            mgmt.assign_role_to_user(user, input.role_name)
+
+        logger.info(f"Admin updated user: {user.username} by {request.user.username}")
+        return UserProfileNonPagedResponseSerializer(
+            response=ResponseObject.get_response(1, "User updated"),
+            data=profile,
+        )
+    except ValueError as e:
+        return UserProfileNonPagedResponseSerializer(
+            response=ResponseObject.get_response(0, str(e))
+        )
+    except Exception as e:
+        logger.error(f"Admin update user error: {e}")
+        return UserProfileNonPagedResponseSerializer(
+            response=ResponseObject.get_response(2, str(e))
+        )
+
+
+@accounts_router.post(
+    "/users/{unique_id}/reset-password",
+    response=BaseNonPagedResponseData,
+    auth=PermissionAuth(required_permissions=["manage_users"]),
+)
+def admin_reset_user_password(
+    request: HttpRequest,
+    unique_id: str,
+    input: AdminResetPasswordInputSerializer,
+):
+    try:
+        profile = UserProfile.objects.select_related("profile_user").filter(
+            unique_id=unique_id,
+            is_active=True,
+        ).first()
+        if not profile:
+            return BaseNonPagedResponseData(
+                response=ResponseObject.get_response(3, "User not found")
+            )
+
+        user = profile.profile_user
+        user.set_password(input.new_password)
+        user.save()
+
+        logger.info(f"Admin reset password for user: {user.username} by {request.user.username}")
+        return BaseNonPagedResponseData(
+            response=ResponseObject.get_response(1, "Password reset successfully")
+        )
+    except Exception as e:
+        logger.error(f"Admin reset password error: {e}")
+        return BaseNonPagedResponseData(response=ResponseObject.get_response(2, str(e)))
+
+
+@accounts_router.delete(
+    "/users/{unique_id}",
+    response=BaseNonPagedResponseData,
+    auth=PermissionAuth(required_permissions=["manage_users"]),
+)
+def admin_deactivate_user(request: HttpRequest, unique_id: str):
+    try:
+        profile = UserProfile.objects.select_related("profile_user").filter(
+            unique_id=unique_id,
+            is_active=True,
+        ).first()
+        if not profile:
+            return BaseNonPagedResponseData(
+                response=ResponseObject.get_response(3, "User not found")
+            )
+
+        if profile.profile_user_id == request.user.id:
+            return BaseNonPagedResponseData(
+                response=ResponseObject.get_response(0, "You cannot deactivate your own account")
+            )
+
+        with transaction.atomic():
+            profile.is_active = False
+            profile.save()
+
+            user = profile.profile_user
+            user.is_active = False
+            user.save()
+
+            user.role_user.filter(is_active=True).update(is_active=False)
+
+        logger.info(f"Admin deactivated user: {user.username} by {request.user.username}")
+        return BaseNonPagedResponseData(
+            response=ResponseObject.get_response(1, "User deactivated")
+        )
+    except Exception as e:
+        logger.error(f"Admin deactivate user error: {e}")
         return BaseNonPagedResponseData(response=ResponseObject.get_response(2, str(e)))

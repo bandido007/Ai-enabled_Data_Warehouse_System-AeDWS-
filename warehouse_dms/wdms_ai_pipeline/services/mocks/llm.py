@@ -116,6 +116,9 @@ class MockLLMService(LLMServiceInterface):
         text: str,
         extracted_fields: Dict[str, Any],
         document_type_label: str,
+        required_fields: List[str] | None = None,
+        is_form_fill: bool = False,
+        today: str | None = None,
     ) -> ReviewResult:
         is_sw = _looks_swahili(text)
         if is_sw:

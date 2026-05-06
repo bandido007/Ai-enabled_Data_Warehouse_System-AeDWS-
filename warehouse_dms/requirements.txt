@@ -3,7 +3,8 @@ django-ninja==1.4.3
 psycopg2-binary==2.9.10
 pgvector==0.3.6
 celery==5.4.0
-django-celery-beat==2.8.1
+django-celery-beat
+django-cors-headers>=4.0.0
 redis==5.2.1
 python-dotenv==1.0.1
 pycryptodome==3.21.0
@@ -21,3 +22,6 @@ africastalking==1.2.7
 Jinja2==3.1.4
 google-cloud-vision==3.1.0
 google-cloud-aiplatform==1.71.1
+# setuptools<70 is required: google-cloud-vision 3.1.0 uses pkg_resources,
+# which setuptools>=70 no longer exposes as a top-level package.
+setuptools==69.5.1

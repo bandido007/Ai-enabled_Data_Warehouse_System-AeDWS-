@@ -64,14 +64,23 @@ from wdms_documents.models import (
 from wdms_documents.serializers import (
     AllowedTransitionSerializer,
     AllowedTransitionsResponseSerializer,
+    BulkTransitionsInputSerializer,
+    BulkTransitionsResponseSerializer,
     CorrectAIInputSerializer,
     DocumentFilteringSerializer,
     DocumentNonPagedResponseSerializer,
     DocumentPagedResponseSerializer,
+    DocumentStatsResponseSerializer,
+    DocumentStatsSerializer,
     DocumentTableSerializer,
     DocumentTypeMetadataSerializer,
     DocumentTypesListResponseSerializer,
+    FormFillInputSerializer,
+    FormValidationDraftInputSerializer,
+    FormValidationInputSerializer,
+    FormValidationResponseSerializer,
     ReclassifyInputSerializer,
+    RecentActivityItemSerializer,
     SearchHitSerializer,
     SearchInputSerializer,
     SearchResponseDataSerializer,
@@ -147,7 +156,22 @@ def _scope_documents_for_user(request: HttpRequest) -> QuerySet:
         return base
 
     if role == "DEPOSITOR":
-        return base.filter(uploader=user)
+        # Own uploads always visible; also APPROVED docs issued to depositors
+        # (e.g. warehouse receipts, quality certificates) visible within their warehouse.
+        warehouse = _user_warehouse(user)
+        depositor_visible_types = [
+            dt.id for dt in get_all_document_types()
+            if "DEPOSITOR" in dt.viewer_roles
+        ]
+        own_uploads = Q(uploader=user)
+        if warehouse and depositor_visible_types:
+            issued_to_depositor = Q(
+                status="APPROVED",
+                document_type_id__in=depositor_visible_types,
+                warehouse=warehouse,
+            )
+            return base.filter(own_uploads | issued_to_depositor)
+        return base.filter(own_uploads)
 
     if role == "STAFF":
         warehouse = _user_warehouse(user)
@@ -161,7 +185,11 @@ def _scope_documents_for_user(request: HttpRequest) -> QuerySet:
             return base.none()
         return base.filter(warehouse__tenant=tenant)
 
-    # REGULATOR and any unknown role get nothing in Phase 2.
+    if role == "REGULATOR":
+        # Regulators see documents they uploaded (compliance reports, etc.)
+        return base.filter(uploader=user)
+
+    # Unknown role → empty queryset
     return base.none()
 
 
@@ -448,6 +476,108 @@ def confirm_upload(
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Form-Fill — structured in-system form submission (no file upload)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+@documents_router.post(
+    "/form-fill/",
+    response=DocumentNonPagedResponseSerializer,
+    auth=_auth,
+)
+def form_fill(
+    request: HttpRequest,
+    payload: FormFillInputSerializer,
+):
+    """
+    Create a document directly from structured form fields — no file required.
+
+    Only available for document types whose file_formats allow it (the type
+    must be listed in allowed_uploader_roles for the caller's role). The
+    submitted fields are stored verbatim in ai_extracted_fields so the
+    staff/manager/CEO review flow works identically to an uploaded document.
+    """
+    try:
+        role = _get_user_role(request.user)
+        if role is None:
+            return DocumentNonPagedResponseSerializer(
+                response=ResponseObject.get_response(0, "No role assigned to this account")
+            )
+
+        type_def = get_document_type(payload.document_type_id)
+        if type_def is None:
+            return DocumentNonPagedResponseSerializer(
+                response=ResponseObject.get_response(0, f"Unknown document type '{payload.document_type_id}'")
+            )
+
+        if role not in type_def.allowed_uploader_roles:
+            return DocumentNonPagedResponseSerializer(
+                response=ResponseObject.get_response(
+                    0,
+                    f"Your role ({role}) is not allowed to submit '{payload.document_type_id}' forms. "
+                    f"Allowed roles: {type_def.allowed_uploader_roles}",
+                )
+            )
+
+        # Validate required fields are present and non-empty
+        missing = [
+            f for f in type_def.required_fields
+            if not payload.fields.get(f, "") and payload.fields.get(f, "") != 0
+        ]
+        if missing:
+            return DocumentNonPagedResponseSerializer(
+                response=ResponseObject.get_response(
+                    0, f"Missing required fields: {', '.join(missing)}"
+                )
+            )
+
+        warehouse = Warehouse.objects.filter(pk=payload.warehouse_id).first()
+        if warehouse is None:
+            return DocumentNonPagedResponseSerializer(
+                response=ResponseObject.get_response(0, "Warehouse not found")
+            )
+
+        with transaction.atomic():
+            document = Document.objects.create(
+                warehouse=warehouse,
+                uploader=request.user,
+                document_type_id=payload.document_type_id,
+                title=payload.title,
+                file=None,
+                status=type_def.initial_state,
+                ai_extracted_fields=payload.fields,
+                ai_classification=payload.document_type_id,
+                created_by=request.user,
+            )
+
+        logger.info(
+            f"Form-fill document created: id={document.pk} "
+            f"type={payload.document_type_id} by={request.user.username}"
+        )
+
+        # Kick off AI summary + embedding (skip OCR/classify — fields already set)
+        try:
+            from wdms_ai_pipeline.tasks import trigger_form_fill_ai_review
+            trigger_form_fill_ai_review(document.pk)
+        except Exception as ai_exc:
+            logger.error(
+                f"trigger_form_fill_ai_review failed for doc={document.pk}: {ai_exc}"
+            )
+
+        _attach_transitions(document)
+        return DocumentNonPagedResponseSerializer(
+            response=ResponseObject.get_response(1, "Form submitted successfully"),
+            data=DocumentTableSerializer.model_validate(document),
+        )
+
+    except Exception as e:
+        logger.error(f"form_fill error: {e}")
+        return DocumentNonPagedResponseSerializer(
+            response=ResponseObject.get_response(2, str(e))
+        )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Transition (FSM)
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -494,6 +624,15 @@ def transition_document(
         # the post-transition state with fresh related rows.
         fresh = _scope_documents_for_user(request).filter(pk=document.pk).first()
         _attach_transitions(fresh)
+
+        # After a resubmit with edited fields on a form-fill doc, re-run AI review
+        if input.action == "resubmit" and input.edited_fields:
+            try:
+                from wdms_ai_pipeline.tasks import trigger_form_fill_ai_review
+                trigger_form_fill_ai_review(fresh.pk)
+            except Exception as ai_exc:
+                logger.warning(f"AI re-review after resubmit failed for doc={fresh.pk}: {ai_exc}")
+
         return DocumentNonPagedResponseSerializer(
             response=ResponseObject.get_response(1, result.message),
             data=DocumentTableSerializer.model_validate(fresh),
@@ -503,6 +642,382 @@ def transition_document(
         logger.error(f"Transition error doc={document_id}: {e}")
         return DocumentNonPagedResponseSerializer(
             response=ResponseObject.get_response(2, str(e))
+        )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Form validation — POST /{document_id}/validate-form/ OR POST /validate-form/ (draft)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+@documents_router.post(
+    "/validate-form/",
+    response=FormValidationResponseSerializer,
+    auth=_auth,
+)
+def validate_form_draft(
+    request: HttpRequest,
+    input: FormValidationDraftInputSerializer,
+):
+    """
+    AI validation of form fields BEFORE document creation (draft mode).
+    
+    Unlike the document-specific endpoint, this doesn't require a document ID
+    and is used during initial form fill submission.
+    
+    Returns confidence, verdict (PASS/SOFT_WARNING/HARD_REJECT), issues,
+    and recommendations.
+    """
+    try:
+        # Get document type config
+        type_def = get_document_type(input.document_type_id)
+        if not type_def:
+            return FormValidationResponseSerializer(
+                response=ResponseObject.get_response(3, f"Unknown document type: {input.document_type_id}")
+            )
+        
+        required_fields: List[str] = list(type_def.required_fields) if type_def else []
+        validation_rules = dict(type_def.validation_rules) if type_def else {}
+        
+        # Validate form fields using local validator
+        verdict, issues, confidence = _validate_form_fields(
+            input.document_type_id,
+            input.fields,
+            required_fields,
+            validation_rules,
+        )
+        
+        # Generate recommendations based on issues
+        recommendations = _generate_recommendations(issues)
+        
+        result = {
+            "confidence": min(1.0, max(0.0, confidence)),
+            "verdict": verdict,
+            "issues": issues,
+            "recommendations": recommendations,
+            "warnings": issues,  # For backward compatibility
+        }
+        
+        return FormValidationResponseSerializer(
+            response=ResponseObject.get_response(1, f"Form validation completed: {verdict}"),
+            data=result,
+        )
+    
+    except Exception as e:
+        logger.error(f"Form validation error: {e}")
+        return FormValidationResponseSerializer(
+            response=ResponseObject.get_response(2, str(e))
+        )
+
+
+@documents_router.post(
+    "/{document_id}/validate-form/",
+    response=FormValidationResponseSerializer,
+    auth=_auth,
+)
+def validate_form_before_submit(
+    request: HttpRequest,
+    document_id: int,
+    input: FormValidationInputSerializer,
+):
+    """
+    AI validation of form fields BEFORE submission to the next approver
+    (for existing documents being corrected).
+    
+    Returns confidence, verdict (PASS/SOFT_WARNING/HARD_REJECT), issues,
+    and recommendations. User sees these results and can either fix & re-validate,
+    or submit anyway (for SOFT_WARNING).
+    """
+    try:
+        scoped = _scope_documents_for_user(request)
+        document = scoped.filter(pk=document_id).first()
+        if document is None:
+            return FormValidationResponseSerializer(
+                response=ResponseObject.get_response(3, "Document not found")
+            )
+
+        # Get document type config
+        type_def = get_document_type(document.document_type_id)
+        if not type_def:
+            return FormValidationResponseSerializer(
+                response=ResponseObject.get_response(3, f"Unknown document type: {document.document_type_id}")
+            )
+        
+        required_fields: List[str] = list(type_def.required_fields) if type_def else []
+        validation_rules = dict(type_def.validation_rules) if type_def else {}
+        
+        # Validate form fields using local validator
+        verdict, issues, confidence = _validate_form_fields(
+            document.document_type_id,
+            input.fields,
+            required_fields,
+            validation_rules,
+        )
+        
+        # Generate recommendations based on issues
+        recommendations = _generate_recommendations(issues)
+        
+        result = {
+            "confidence": min(1.0, max(0.0, confidence)),
+            "verdict": verdict,
+            "issues": issues,
+            "recommendations": recommendations,
+            "warnings": issues,  # For backward compatibility
+        }
+        
+        return FormValidationResponseSerializer(
+            response=ResponseObject.get_response(1, f"Form validation completed: {verdict}"),
+            data=result,
+        )
+    
+    except Exception as e:
+        logger.error(f"Form validation error doc={document_id}: {e}")
+        return FormValidationResponseSerializer(
+            response=ResponseObject.get_response(2, str(e))
+        )
+
+
+def _validate_form_fields(
+    document_type_id: str,
+    fields: dict,
+    required_fields: List[str],
+    validation_rules: dict,
+) -> tuple[str, List[str], float]:
+    """
+    Validate form fields against required fields and validation rules.
+    
+    Returns: (verdict, issues, confidence)
+      - verdict: "PASS" | "SOFT_WARNING" | "HARD_REJECT"
+      - issues: list of issue messages
+      - confidence: float 0.0-1.0
+    """
+    issues = []
+    warnings = []
+    
+    # Check required fields
+    missing_required = []
+    for field_name in required_fields:
+        field_value = fields.get(field_name, "").strip()
+        if not field_value:
+            missing_required.append(field_name)
+            issues.append(f"Required field '{field_name}' is empty")
+    
+    # Validate field formats and content
+    for field_name, field_value in fields.items():
+        if not field_value or not field_value.strip():
+            continue
+            
+        # Phone validation
+        if "phone" in field_name.lower() or "telephone" in field_name.lower():
+            if len(field_value.replace("+", "").replace(" ", "").replace("-", "")) < 7:
+                warnings.append(f"Field '{field_name}' appears to be an incomplete phone number: {field_value[:30]}")
+        
+        # Email validation (if field contains email)
+        if "email" in field_name.lower():
+            if "@" not in field_value or "." not in field_value:
+                issues.append(f"Field '{field_name}' does not appear to be a valid email: {field_value[:50]}")
+        
+        # Date validation
+        if "date" in field_name.lower():
+            try:
+                from datetime import datetime
+                date_val = field_value.strip()
+                if len(date_val) == 10:  # YYYY-MM-DD
+                    parts = date_val.split("-")
+                    if len(parts) == 3:
+                        year, month, day = int(parts[0]), int(parts[1]), int(parts[2])
+                        if year < 2000 or year > 2100 or month < 1 or month > 12 or day < 1 or day > 31:
+                            warnings.append(f"Field '{field_name}' has invalid date: {field_value}")
+            except (ValueError, AttributeError):
+                warnings.append(f"Field '{field_name}' could not be parsed as a date: {field_value[:30]}")
+        
+        # Numeric fields
+        if "quantity" in field_name.lower() or "amount" in field_name.lower():
+            try:
+                num_val = float(field_value.replace(",", "").replace("Tshs", "").strip())
+                if num_val <= 0:
+                    warnings.append(f"Field '{field_name}' should be a positive number, got: {field_value}")
+            except (ValueError, AttributeError):
+                warnings.append(f"Field '{field_name}' should be numeric, got: {field_value[:30]}")
+    
+    # Determine verdict
+    if missing_required:
+        verdict = "HARD_REJECT"
+        base_confidence = 0.50
+    elif issues:
+        verdict = "HARD_REJECT"
+        base_confidence = 0.50
+    elif warnings:
+        verdict = "SOFT_WARNING"
+        base_confidence = 0.75
+    else:
+        verdict = "PASS"
+        base_confidence = 0.95
+    
+    # Combine issues and warnings for display
+    all_issues = issues + warnings
+    
+    return verdict, all_issues, base_confidence
+    """
+    Reconstruct readable form text from field dict for AI validation.
+    
+    Converts:
+      {"name": "John Doe", "date": "2026-05-03", "amount": "1000"}
+    To:
+      "name: John Doe
+       date: 2026-05-03
+       amount: 1000"
+    """
+    lines = []
+    for key, value in fields.items():
+        if value is not None and value != "":
+            # Handle nested objects
+            if isinstance(value, dict):
+                for subkey, subvalue in value.items():
+                    lines.append(f"{key}_{subkey}: {subvalue}")
+            elif isinstance(value, (list, tuple)):
+                lines.append(f"{key}: {', '.join(str(v) for v in value)}")
+            else:
+                lines.append(f"{key}: {value}")
+    return "\n".join(lines) or "(empty form)"
+
+
+def _generate_recommendations(issues: List[str]) -> List[str]:
+    """
+    Generate actionable recommendations based on validation issues.
+    """
+    recommendations = []
+    issues_text = " ".join(issues).lower()
+    
+    if "required field" in issues_text and "not found" in issues_text:
+        recommendations.append("Please fill in all required fields marked with *")
+    
+    if "date" in issues_text:
+        recommendations.append("Verify that all dates are in the correct format (e.g., YYYY-MM-DD)")
+    
+    if "match" in issues_text or "mismatch" in issues_text:
+        recommendations.append("Check that related fields (e.g., dates) are consistent")
+    
+    if "number" in issues_text or "amount" in issues_text:
+        recommendations.append("Verify numeric values are correct and properly formatted")
+    
+    if not recommendations:
+        recommendations.append("Review the form and re-validate")
+    
+    return recommendations
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Dashboard statistics — GET /documents/stats/
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+@documents_router.get(
+    "/stats/",
+    response=DocumentStatsResponseSerializer,
+    auth=_auth,
+)
+def get_document_stats(request: HttpRequest):
+    """
+    Return aggregated document statistics scoped to the current user's
+    tenant / warehouse / ownership (same rules as the list endpoint).
+
+    Used by the dashboard to show real metric cards and the recent-activity
+    feed without requiring the client to fetch and aggregate individual docs.
+    """
+    from datetime import timedelta
+
+    from django.db.models import Avg, ExpressionWrapper, F, FloatField
+    from django.utils import timezone
+
+    try:
+        scoped = _scope_documents_for_user(request)
+        doc_ids = list(scoped.values_list("pk", flat=True))
+
+        # --- Status counts ---
+        from django.db.models import Count
+        raw_counts = (
+            scoped
+            .values("status")
+            .annotate(cnt=Count("pk"))
+            .values_list("status", "cnt")
+        )
+        status_counts = {row[0]: row[1] for row in raw_counts}
+
+        # --- This-week approved / rejected (based on when the transition happened) ---
+        week_ago = timezone.now() - timedelta(days=7)
+        approved_this_week = WorkflowTransition.objects.filter(
+            document_id__in=doc_ids,
+            to_status="APPROVED",
+            created_date__gte=week_ago,
+        ).count()
+        rejected_this_week = WorkflowTransition.objects.filter(
+            document_id__in=doc_ids,
+            to_status="REJECTED",
+            created_date__gte=week_ago,
+        ).count()
+
+        # --- Average approval time (doc.created_date → first APPROVED transition) ---
+        avg_approval_hours = None
+        try:
+            from django.db.models import Min
+            approval_times = (
+                WorkflowTransition.objects
+                .filter(document_id__in=doc_ids, to_status="APPROVED")
+                .values("document_id")
+                .annotate(approved_at=Min("created_date"))
+            )
+            # Join with document created_date to compute durations
+            total_seconds = 0.0
+            count = 0
+            for row in approval_times:
+                doc = scoped.filter(pk=row["document_id"]).first()
+                if doc:
+                    delta = row["approved_at"] - doc.created_date
+                    total_seconds += delta.total_seconds()
+                    count += 1
+            if count > 0:
+                avg_approval_hours = round(total_seconds / count / 3600, 2)
+        except Exception:
+            pass
+
+        # --- Recent activity (last 15 transitions across all scoped docs) ---
+        recent_transitions = (
+            WorkflowTransition.objects
+            .filter(document_id__in=doc_ids)
+            .select_related("document", "actor")
+            .order_by("-created_date")[:15]
+        )
+        recent_activity = [
+            RecentActivityItemSerializer(
+                document_id=t.document_id,
+                document_title=getattr(t.document, "title", f"Doc #{t.document_id}"),
+                action=t.action,
+                from_status=t.from_status,
+                to_status=t.to_status,
+                actor_name=(
+                    f"{t.actor.first_name} {t.actor.last_name}".strip()
+                    or t.actor.username
+                ) if t.actor else "System",
+                created_date=t.created_date,
+            )
+            for t in recent_transitions
+        ]
+
+        return DocumentStatsResponseSerializer(
+            response=ResponseObject.get_response(1, "OK"),
+            data=DocumentStatsSerializer(
+                status_counts=status_counts,
+                approved_this_week=approved_this_week,
+                rejected_this_week=rejected_this_week,
+                avg_approval_hours=avg_approval_hours,
+                recent_activity=recent_activity,
+            ),
+        )
+    except Exception as exc:
+        logger.error(f"get_document_stats error: {exc}")
+        return DocumentStatsResponseSerializer(
+            response=ResponseObject.get_response(2, str(exc))
         )
 
 
@@ -559,6 +1074,7 @@ def list_document_types(request: HttpRequest):
                 DocumentTypeMetadataSerializer(
                     id=t.id,
                     label=t.label,
+                    form_number=t.form_number,
                     category=t.category,
                     initial_state=t.initial_state,
                     allowed_uploader_roles=list(t.allowed_uploader_roles),
@@ -577,6 +1093,211 @@ def list_document_types(request: HttpRequest):
     except Exception as e:
         logger.error(f"List document types error: {e}")
         return DocumentTypesListResponseSerializer(
+            response=ResponseObject.get_response(2, str(e))
+        )
+
+
+# ── Fixed-path endpoints must all be registered before /{document_id}/ to
+# prevent the wildcard capturing literal path segments and returning 405. ────
+
+
+@documents_router.post(
+    "/transitions/bulk/",
+    response=BulkTransitionsResponseSerializer,
+    auth=_auth,
+)
+def bulk_document_transitions(
+    request: HttpRequest,
+    payload: BulkTransitionsInputSerializer,
+):
+    """
+    Return the available FSM transitions for a batch of documents in one call.
+
+    The caller supplies up to 100 document IDs.  For each ID the caller is
+    allowed to see (via the standard tenant-scoping rules), the response
+    maps str(document_id) → list of available transitions for the current
+    user.  Documents outside the caller's scope are silently omitted — the
+    frontend treats absence as "no transitions available" and never raises an
+    error for unseen documents.
+
+    Sending more than 100 IDs is rejected with a business-failure response.
+    """
+    try:
+        if len(payload.document_ids) > 100:
+            return BulkTransitionsResponseSerializer(
+                response=ResponseObject.get_response(
+                    0, "Maximum 100 document IDs per request"
+                )
+            )
+
+        scoped = _scope_documents_for_user(request)
+        documents = scoped.filter(
+            pk__in=payload.document_ids, is_active=True
+        ).select_related("warehouse", "uploader")
+
+        engine = FSMEngine()
+        result: dict = {}
+
+        for document in documents:
+            allowed = engine.get_allowed_transitions(document, request.user)
+            result[str(document.pk)] = [
+                AllowedTransitionSerializer(
+                    from_state=t.from_state,
+                    to_state=t.to_state,
+                    action=t.action,
+                    required_role=t.required_role,
+                    reason_required=t.reason_required,
+                )
+                for t in allowed
+            ]
+
+        return BulkTransitionsResponseSerializer(
+            response=ResponseObject.get_response(1),
+            data=result,
+        )
+
+    except Exception as e:
+        logger.error(f"bulk_document_transitions error: {e}")
+        return BulkTransitionsResponseSerializer(
+            response=ResponseObject.get_response(2, str(e))
+        )
+
+
+# ── Search ───────────────────────────────────────────────────────────────────
+
+def _looks_like_keyword(query: str) -> bool:
+    """Heuristic: short phrase with no sentence-like structure → keyword search."""
+    q = (query or "").strip()
+    if not q:
+        return True
+    word_count = len(q.split())
+    if word_count >= 5:
+        return False
+    if "?" in q:
+        return False
+    # No sentence punctuation and short → treat as keyword.
+    return True
+
+
+@documents_router.post(
+    "/search/",
+    response=SearchResponseSerializer,
+    auth=_auth,
+)
+def search_documents(
+    request: HttpRequest,
+    payload: SearchInputSerializer,
+):
+    """
+    Role-scoped search across documents.
+
+    Modes:
+      - keyword:  PostgreSQL full-text search using the 'simple' configuration
+                  (the corpus mixes Swahili and English; the English stemmer
+                  would mangle Swahili words).
+      - semantic: embed the query via the embedding service, then order by
+                  pgvector cosine distance. Top 20.
+      - auto:     pick keyword for short phrases, semantic for longer queries.
+    """
+    try:
+        scoped = _scope_documents_for_user(request)
+
+        query = (payload.query or "").strip()
+        if not query:
+            return SearchResponseSerializer(
+                response=ResponseObject.get_response(0, "query is required"),
+            )
+
+        mode = (payload.type or "auto").lower()
+        detected = False
+        if mode not in ("keyword", "semantic", "auto"):
+            return SearchResponseSerializer(
+                response=ResponseObject.get_response(
+                    0, "type must be one of keyword, semantic, auto"
+                )
+            )
+
+        if mode == "auto":
+            detected = True
+            mode = "keyword" if _looks_like_keyword(query) else "semantic"
+
+        if mode == "keyword":
+            from django.contrib.postgres.search import (
+                SearchQuery,
+                SearchRank,
+                SearchVector,
+            )
+
+            vector = SearchVector(
+                "title", "extracted_text", config="simple"
+            )
+            search_q = SearchQuery(query, config="simple")
+            qs = (
+                scoped.annotate(
+                    search=vector,
+                    rank=SearchRank(vector, search_q),
+                )
+                .filter(search=search_q)
+                .order_by("-rank")[:20]
+            )
+            results = []
+            for doc in qs:
+                snippet = (doc.extracted_text or "")[:240]
+                results.append(
+                    SearchHitSerializer(
+                        id=doc.pk,
+                        title=doc.title,
+                        document_type_id=doc.document_type_id,
+                        status=doc.status,
+                        warehouse_name=doc.warehouse.name if doc.warehouse else "",
+                        snippet=snippet,
+                        score=float(getattr(doc, "rank", 0.0) or 0.0),
+                    )
+                )
+
+        else:  # semantic
+            from pgvector.django import CosineDistance
+
+            from wdms_ai_pipeline.services.registry import get_service_registry
+
+            services = get_service_registry()
+            query_vector = services.embedding.embed(query)
+
+            qs = (
+                scoped.exclude(embedding__isnull=True)
+                .annotate(distance=CosineDistance("embedding", query_vector))
+                .order_by("distance")[:20]
+            )
+            results = []
+            for doc in qs:
+                snippet = (doc.ai_summary or doc.extracted_text or "")[:240]
+                # Cosine distance ∈ [0, 2]; convert to a rough similarity score.
+                distance = float(getattr(doc, "distance", 1.0) or 1.0)
+                score = max(0.0, 1.0 - distance)
+                results.append(
+                    SearchHitSerializer(
+                        id=doc.pk,
+                        title=doc.title,
+                        document_type_id=doc.document_type_id,
+                        status=doc.status,
+                        warehouse_name=doc.warehouse.name if doc.warehouse else "",
+                        snippet=snippet,
+                        score=score,
+                    )
+                )
+
+        return SearchResponseSerializer(
+            response=ResponseObject.get_response(1),
+            data=SearchResponseDataSerializer(
+                mode=mode,
+                detected=detected,
+                results=results,
+            ),
+        )
+
+    except Exception as e:
+        logger.error(f"Search error: {e}")
+        return SearchResponseSerializer(
             response=ResponseObject.get_response(2, str(e))
         )
 
@@ -823,138 +1544,3 @@ def correct_ai_fields(
         )
 
 
-def _looks_like_keyword(query: str) -> bool:
-    """Heuristic: short phrase with no sentence-like structure → keyword search."""
-    q = (query or "").strip()
-    if not q:
-        return True
-    word_count = len(q.split())
-    if word_count >= 5:
-        return False
-    if "?" in q:
-        return False
-    # No sentence punctuation and short → treat as keyword.
-    return True
-
-
-@documents_router.post(
-    "/search/",
-    response=SearchResponseSerializer,
-    auth=_auth,
-)
-def search_documents(
-    request: HttpRequest,
-    payload: SearchInputSerializer,
-):
-    """
-    Role-scoped search across documents.
-
-    Modes:
-      - keyword:  PostgreSQL full-text search using the 'simple' configuration
-                  (the corpus mixes Swahili and English; the English stemmer
-                  would mangle Swahili words).
-      - semantic: embed the query via the embedding service, then order by
-                  pgvector cosine distance. Top 20.
-      - auto:     pick keyword for short phrases, semantic for longer queries.
-    """
-    try:
-        scoped = _scope_documents_for_user(request)
-
-        query = (payload.query or "").strip()
-        if not query:
-            return SearchResponseSerializer(
-                response=ResponseObject.get_response(0, "query is required"),
-            )
-
-        mode = (payload.type or "auto").lower()
-        detected = False
-        if mode not in ("keyword", "semantic", "auto"):
-            return SearchResponseSerializer(
-                response=ResponseObject.get_response(
-                    0, "type must be one of keyword, semantic, auto"
-                )
-            )
-
-        if mode == "auto":
-            detected = True
-            mode = "keyword" if _looks_like_keyword(query) else "semantic"
-
-        if mode == "keyword":
-            from django.contrib.postgres.search import (
-                SearchQuery,
-                SearchRank,
-                SearchVector,
-            )
-
-            vector = SearchVector(
-                "title", "extracted_text", config="simple"
-            )
-            search_q = SearchQuery(query, config="simple")
-            qs = (
-                scoped.annotate(
-                    search=vector,
-                    rank=SearchRank(vector, search_q),
-                )
-                .filter(search=search_q)
-                .order_by("-rank")[:20]
-            )
-            results = []
-            for doc in qs:
-                snippet = (doc.extracted_text or "")[:240]
-                results.append(
-                    SearchHitSerializer(
-                        id=doc.pk,
-                        title=doc.title,
-                        document_type_id=doc.document_type_id,
-                        status=doc.status,
-                        warehouse_name=doc.warehouse.name if doc.warehouse else "",
-                        snippet=snippet,
-                        score=float(getattr(doc, "rank", 0.0) or 0.0),
-                    )
-                )
-
-        else:  # semantic
-            from pgvector.django import CosineDistance
-
-            from wdms_ai_pipeline.services.registry import get_service_registry
-
-            services = get_service_registry()
-            query_vector = services.embedding.embed(query)
-
-            qs = (
-                scoped.exclude(embedding__isnull=True)
-                .annotate(distance=CosineDistance("embedding", query_vector))
-                .order_by("distance")[:20]
-            )
-            results = []
-            for doc in qs:
-                snippet = (doc.ai_summary or doc.extracted_text or "")[:240]
-                # Cosine distance ∈ [0, 2]; convert to a rough similarity score.
-                distance = float(getattr(doc, "distance", 1.0) or 1.0)
-                score = max(0.0, 1.0 - distance)
-                results.append(
-                    SearchHitSerializer(
-                        id=doc.pk,
-                        title=doc.title,
-                        document_type_id=doc.document_type_id,
-                        status=doc.status,
-                        warehouse_name=doc.warehouse.name if doc.warehouse else "",
-                        snippet=snippet,
-                        score=score,
-                    )
-                )
-
-        return SearchResponseSerializer(
-            response=ResponseObject.get_response(1),
-            data=SearchResponseDataSerializer(
-                mode=mode,
-                detected=detected,
-                results=results,
-            ),
-        )
-
-    except Exception as e:
-        logger.error(f"Search error: {e}")
-        return SearchResponseSerializer(
-            response=ResponseObject.get_response(2, str(e))
-        )
