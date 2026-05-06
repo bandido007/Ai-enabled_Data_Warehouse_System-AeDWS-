@@ -1,0 +1,126 @@
+:root {
+  --brand-teal: #1a73e8;
+  --brand-teal-hover: #1765cc;
+  --brand-teal-pressed: #1558b0;
+  --accent-terracotta: #d93025;
+  --accent-terracotta-soft: #fce8e6;
+
+  --canvas: #f6f8fc;
+  --surface: #ffffff;
+  --border: #dadce0;
+  --border-subtle: #e8eaed;
+  --text-primary: #202124;
+  --text-secondary: #5f6368;
+  --text-tertiary: #80868b;
+  --text-disabled: #9aa0a6;
+
+  --success: #137333;
+  --success-bg: #e6f4ea;
+  --warning: #b06000;
+  --warning-bg: #fef7e0;
+  --error: #c5221f;
+  --error-bg: #fce8e6;
+  --info: #1a73e8;
+  --info-bg: #e8f0fe;
+
+  --admin-sidebar-bg: #eef2fb;
+  --admin-sidebar-border: #dde3eb;
+  --admin-sidebar-title: #1f1f1f;
+  --admin-sidebar-muted: #5f6368;
+  --admin-sidebar-active-bg: #d3e3fd;
+  --admin-sidebar-active-text: #0b57d0;
+  --admin-sidebar-icon: #5f6368;
+  --admin-header-border: #e3e7ee;
+  --admin-online-dot: #137333;
+  --admin-online-text: #3c4043;
+  --admin-panel-bg: #ffffff;
+  --admin-panel-subtle-bg: #f8fafd;
+  --admin-panel-border: #dde3eb;
+  --admin-hover-bg: #f1f3f4;
+  --admin-row-border: #eceff1;
+  --admin-avatar-bg: #e8f0fe;
+  --admin-avatar-text: #0b57d0;
+  --admin-button-bg: #edf2fa;
+  --admin-page-active-bg: #d3e3fd;
+  --admin-page-active-text: #0b57d0;
+
+  --shadow-sm: 0 1px 2px rgba(60, 64, 67, 0.12), 0 1px 3px rgba(60, 64, 67, 0.08);
+  --shadow-md: 0 2px 6px rgba(60, 64, 67, 0.15), 0 1px 2px rgba(60, 64, 67, 0.12);
+  --shadow-lg: 0 12px 24px rgba(60, 64, 67, 0.18), 0 4px 12px rgba(60, 64, 67, 0.12);
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 19px;
+  --text-xl: 23px;
+  --text-2xl: 28px;
+  --text-3xl: 36px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  --focus-ring: rgba(26, 115, 232, 0.18);
+}
+
+:root[data-theme='dark'] {
+    --brand-teal: #a8c7fa;
+    --brand-teal-hover: #8ab4f8;
+    --brand-teal-pressed: #7aa7ee;
+    --accent-terracotta: #f28b82;
+    --accent-terracotta-soft: #3c1d1b;
+
+    --canvas: #131314;
+    --surface: #1e1f20;
+    --border: #3c4043;
+    --border-subtle: #2b2c2f;
+    --text-primary: #e8eaed;
+    --text-secondary: #bdc1c6;
+    --text-tertiary: #9aa0a6;
+    --text-disabled: #5f6368;
+
+    --success: #81c995;
+    --success-bg: #173125;
+    --warning: #fdd663;
+    --warning-bg: #332b00;
+    --error: #f28b82;
+    --error-bg: #3c1d1b;
+    --info: #a8c7fa;
+    --info-bg: #20344c;
+
+    --admin-sidebar-bg: #171717;
+    --admin-sidebar-border: #2f3133;
+    --admin-sidebar-title: #e8eaed;
+    --admin-sidebar-muted: #9aa0a6;
+    --admin-sidebar-active-bg: #284255;
+    --admin-sidebar-active-text: #a8c7fa;
+    --admin-sidebar-icon: #9aa0a6;
+    --admin-header-border: #2f3133;
+    --admin-online-dot: #81c995;
+    --admin-online-text: #bdc1c6;
+    --admin-panel-bg: #1e1f20;
+    --admin-panel-subtle-bg: #282a2c;
+    --admin-panel-border: #35373a;
+    --admin-hover-bg: #2d2f31;
+    --admin-row-border: #35373a;
+    --admin-avatar-bg: #20344c;
+    --admin-avatar-text: #a8c7fa;
+    --admin-button-bg: #2b2c2f;
+    --admin-page-active-bg: #284255;
+    --admin-page-active-text: #a8c7fa;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.5);
+
+    --focus-ring: rgba(168, 199, 250, 0.22);
+}

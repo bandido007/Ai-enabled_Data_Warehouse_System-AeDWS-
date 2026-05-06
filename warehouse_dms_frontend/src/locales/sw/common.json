@@ -1,0 +1,494 @@
+{
+  "app": {
+    "name": "Warehouse DMS",
+    "tagline": "Udhibiti wa nyaraka za ghala"
+  },
+  "auth": {
+    "title": "Ingia",
+    "subtitle": "Fikia mfumo wa uendeshaji wa ghala",
+    "identifier": "Barua pepe au jina la mtumiaji",
+    "password": "Nenosiri",
+    "submit": "Ingia",
+    "help": "Tumia taarifa zako za ghala kuendelea.",
+    "error": "Imeshindikana kuingia. Hakiki taarifa zako na ujaribu tena.",
+    "logout": "Toka"
+  },
+  "navigation": {
+    "dashboard": "Dashibodi",
+    "documents": "Nyaraka zote",
+    "depositorHome": "Nyumbani",
+    "depositorDocuments": "Hati zangu",
+    "depositorUpload": "Pakia",
+    "depositorForms": "Jaza Fomu",
+    "depositorDownloads": "Vipakuzi",
+    "staffPermissionForm": "Ombi la Ruhusa",
+    "uploadDocument": "Pakia Hati",
+    "search": "Tafuta",
+    "notifications": "Arifa",
+    "settings": "Mipangilio",
+    "warehouseCompliance": "Uzingatiaji wa maghala",
+    "approvedDocuments": "Hati zilizoidhinishwa",
+    "inspectionReports": "Ripoti za ukaguzi",
+    "users": "Watumiaji",
+    "tenants": "Tenant",
+    "warehouses": "Maghala",
+    "audit": "Kumbukumbu za ukaguzi",
+    "analytics": "Uchanganuzi",
+    "workspace": "Eneo la kazi",
+    "account": "Akaunti"
+  },
+  "commandPalette": {
+    "placeholder": "Tafuta nyaraka, maghala, watumiaji...",
+    "empty": "Hakuna hatua za haraka",
+    "searchResults": "Matokeo ya utafutaji",
+    "quickActions": "Hatua za haraka",
+    "openFullSearch": "Fungua utafutaji kamili",
+    "noResults": "Bado hakuna matokeo",
+    "modes": {
+      "auto": "Auto",
+      "keyword": "Neno kuu",
+      "semantic": "Maana"
+    }
+  },
+  "searchPage": {
+    "title": "Tafuta",
+    "subtitle": "Tafuta nyaraka kwa maneno halisi au kwa maana pana ya kisemantiki.",
+    "placeholder": "Tafuta maandishi yaliyotolewa, vichwa vya nyaraka, maghala...",
+    "scope": "Matokeo yanapunguzwa kwa upeo wa jukumu lako la sasa.",
+    "count": "Matokeo {{count}}",
+    "detected": "Auto imechagua hali ya {{mode}}",
+    "relevance": "Ulinganifu",
+    "noSnippet": "Hakuna muhtasari wa kuonyesha",
+    "modes": {
+      "auto": "Auto",
+      "keyword": "Neno kuu",
+      "semantic": "Maana"
+    },
+    "initial": {
+      "title": "Anza kuandika kutafuta",
+      "description": "Tumia angalau herufi mbili kutafuta nyaraka ndani ya wigo wako wa sasa."
+    },
+    "empty": {
+      "title": "Hakuna nyaraka zinazolingana",
+      "description": "Hakuna matokeo kwa “{{query}}”. Jaribu kauli nyingine au badili hali ya utafutaji."
+    }
+  },
+  "dashboard": {
+    "hello": "Hello",
+    "habari": "Habari",
+    "subtitle": "Nyaraka {{count}} ndani ya wigo wako wa kazi",
+    "queueTitle": "Foleni ya kazi",
+    "activityTitle": "Shughuli za karibuni",
+    "emptyQueue": "Hakuna kazi inayosubiri kwa sasa.",
+    "emptyActivity": "Mabadiliko ya hatua yataonekana hapa timu ikianza kushughulikia nyaraka.",
+    "metrics": {
+      "awaitingReview": "Zinasubiri uhakiki",
+      "processedToday": "Zimefanyiwa kazi leo",
+      "correctionsSent": "Marekebisho yaliyotumwa",
+      "avgReviewTime": "Wastani wa muda wa uhakiki",
+      "pendingApproval": "Zinasubiri idhini",
+      "approvedThisWeek": "Zilizoidhinishwa wiki hii",
+      "rejectedThisWeek": "Zilizokataliwa wiki hii",
+      "avgApprovalTime": "Wastani wa muda wa idhini",
+      "tenantDocuments": "Nyaraka za tenant",
+      "finalApprovals": "Idhini za mwisho"
+    }
+  },
+  "documents": {
+    "title": "Nyaraka zote",
+    "subtitle": "Fuatilia mtiririko wa nyaraka, uhakika, na uelekezaji.",
+    "filters": {
+      "search": "Tafuta nyaraka",
+      "status": "Hali",
+      "type": "Aina ya waraka",
+      "warehouse": "Ghala",
+      "startDate": "Kutoka",
+      "endDate": "Mpaka",
+      "all": "Zote"
+    },
+    "actions": {
+      "filter": "Chuja",
+      "export": "Hamisha CSV",
+      "clear": "Futa"
+    },
+    "table": {
+      "title": "Foleni",
+      "columns": {
+        "id": "ID",
+        "document": "Waraka",
+        "type": "Aina",
+        "warehouse": "Ghala",
+        "depositor": "Mweka",
+        "confidence": "Uhakika wa AI",
+        "status": "Hali",
+        "submitted": "Uliwasilishwa"
+      }
+    },
+    "empty": {
+      "title": "Hakuna nyaraka",
+      "description": "Panua vichujio vyako au neno la utafutaji."
+    },
+    "pagination": {
+      "previous": "Nyuma",
+      "next": "Mbele",
+      "page": "Ukurasa {{current}} wa {{total}}"
+    }
+  },
+  "notifications": {
+    "title": "Arifa",
+    "unread": "Hazijasomwa",
+    "markAllRead": "Weka zote zimesomwa",
+    "empty": "Hakuna arifa mpya.",
+    "viewAll": "Itakuja katika awamu inayofuata"
+  },
+  "notificationPreferences": {
+    "title": "Mapendeleo ya arifa",
+    "subtitle": "Chagua njia za mawasiliano unazotaka kutumia kwa kila aina ya arifa.",
+    "columns": {
+      "event": "Aina ya tukio",
+      "dashboard": "Dashibodi",
+      "email": "Barua pepe",
+      "sms": "SMS"
+    },
+    "dashboardHint": "Arifa za dashibodi haziwezi kuzimwa",
+    "smsHint": "Gharama za SMS zinaweza kutumika kulingana na eneo lako",
+    "save": "Hifadhi",
+    "reset": "Rudisha",
+    "saved": "Mapendeleo yamehifadhiwa",
+    "saveError": "Imeshindikana kuhifadhi mapendeleo",
+    "empty": {
+      "title": "Hakuna mapendeleo yaliyopatikana",
+      "description": "Mapendeleo ya arifa yataonekana hapa mara tu backend itakaporudisha aina za matukio zinazopatikana."
+    }
+  },
+  "notificationEvents": {
+    "DOCUMENT_UPLOADED": "Hati imepakiwa",
+    "DOCUMENT_VALIDATED": "Hati imehakikiwa",
+    "DOCUMENT_CONFIRMED_BY_STAFF": "Mhudumu amethibitisha hati",
+    "DOCUMENT_APPROVED_BY_MANAGER": "Meneja ameidhinisha hati",
+    "DOCUMENT_APPROVED_BY_CEO": "Mkurugenzi ameidhinisha hati",
+    "DOCUMENT_REJECTED": "Hati imekataliwa",
+    "DOCUMENT_SENT_BACK": "Hati imerudishwa",
+    "DOCUMENT_APPROVED_FINAL": "Hati imeidhinishwa rasmi",
+    "RANKING_REPORT_UPDATED": "Ripoti ya upangaji imesasishwa"
+  },
+  "regulator": {
+    "subtitle": "Eneo la kazi la udhibiti",
+    "jurisdictionFallback": "Mamlaka ya kitaifa",
+    "dashboard": {
+      "title": "Muhtasari wa Uzingatiaji",
+      "subtitle": "Uangalizi wa hali ya sasa katika mamlaka yako.",
+      "metrics": {
+        "warehouses": "Maghala katika mamlaka",
+        "highRisk": "Maghala yenye hatari kubwa",
+        "averageCompliance": "Wastani wa uzingatiaji",
+        "inspections": "Ukaguzi robo hii"
+      },
+      "warehouseSection": "Maghala",
+      "byNumbers": "Kwa nambari",
+      "sort": {
+        "label": "Panga kwa",
+        "name": "Jina",
+        "score": "Alama",
+        "region": "Kanda",
+        "activity": "Shughuli"
+      },
+      "table": {
+        "position": "#",
+        "warehouse": "Ghala",
+        "score": "Alama",
+        "documents": "Hati",
+        "activity": "Shughuli ya mwisho"
+      },
+      "totals": {
+        "documents": "Jumla ya hati",
+        "approved": "Hati zilizoidhinishwa",
+        "corrections": "Marekebisho yaliyoombwa",
+        "inspectionForms": "Fomu za ukaguzi"
+      },
+      "empty": {
+        "title": "Hakuna maghala yaliyopatikana",
+        "description": "Maghala katika mwonekano wa mdhibiti yataonekana hapa data ya mamlaka itakapopatikana."
+      }
+    },
+    "detail": {
+      "back": "Rudi kwenye muhtasari",
+      "metrics": {
+        "ranking": "Alama ya sasa ya upangaji",
+        "risk": "Kiwango cha hatari",
+        "documents": "Jumla ya hati",
+        "activity": "Shughuli ya mwisho"
+      },
+      "breakdown": "Mgawanyo wa hati",
+      "byType": "Kwa aina",
+      "recent": "Shughuli za karibuni",
+      "recentEmpty": "Hati za karibuni za mamlaka zitaonekana hapa mara tu upeo wa hati za mdhibiti utakapowezeshwa.",
+      "loadError": "Imeshindikana kupakia takwimu za ghala."
+    },
+    "documents": {
+      "title": "Hati zilizoidhinishwa",
+      "subtitle": "Mwonekano wa kusoma tu wa hati zinazoonekana ndani ya upeo wa mdhibiti.",
+      "empty": {
+        "title": "Hakuna hati za mdhibiti zilizopatikana",
+        "description": "Hati zitaonekana hapa mara tu upeo wa hati za mdhibiti utakapowezeshwa kwenye backend."
+      }
+    },
+    "inspections": {
+      "title": "Ripoti za ukaguzi",
+      "subtitle": "Hati za fomu za ukaguzi katika mamlaka yote.",
+      "columns": {
+        "warehouse": "Ghala",
+        "date": "Tarehe ya ukaguzi",
+        "inspector": "Mkaguzi",
+        "summary": "Matokeo"
+      }
+    },
+    "readOnly": {
+      "title": "Mwonekano wa hati",
+      "summary": "Muhtasari wa AI",
+      "fields": "Sehemu zilizotolewa",
+      "history": "Historia ya mabadiliko",
+      "loadError": "Imeshindikana kupakia hati hii ya mdhibiti."
+    },
+    "risk": {
+      "LOW": "Hatari ndogo",
+      "MEDIUM": "Hatari ya kati",
+      "HIGH": "Hatari kubwa",
+      "none": "Haijapimwa"
+    }
+  },
+  "documentReview": {
+    "titleFallback": "Mapitio ya waraka",
+    "documentTab": "Waraka",
+    "reviewTab": "Mapitio",
+    "viewer": {
+      "pageLabel": "ukurasa {{current}} wa {{total}}",
+      "zoomOut": "Punguza",
+      "zoomIn": "Ongeza",
+      "fitWidth": "Jaza upana",
+      "fitPage": "Jaza ukurasa",
+      "openReview": "Fungua paneli ya mapitio",
+      "fileUnavailable": "Hakuna mwonekano wa waraka.",
+      "download": "Pakua faili",
+      "alt": "Mwonekano wa waraka"
+    },
+    "header": {
+      "uploadedBy": "Imepakiwa na {{name}} · {{time}}"
+    },
+    "summary": {
+      "title": "Muhtasari wa AI",
+      "confidence": "uhakika {{value}}"
+    },
+    "fields": {
+      "title": "Sehemu zilizotolewa",
+      "typeLabel": "Uainishaji",
+      "typePlaceholder": "Chagua aina ya waraka",
+      "saving": "Inahifadhi…",
+      "saved": "Imehifadhiwa",
+      "saveFailed": "Imeshindikana kuhifadhi",
+      "empty": "Hakuna sehemu zilizotolewa bado.",
+      "emptyProcessed": "AI ilichambua hati hii lakini haikupata thamani za sehemu — hii inaweza kuwa fomu tupu, skani ya ubora mdogo, au hati ambapo sehemu hazitumiki.",
+      "reclassifying": "Inaainisha upya — hii inaweza kuchukua sekunde 30–60",
+      "takingLonger": "Inachukua muda zaidi ya kawaida.",
+      "refresh": "Sasisha sasa",
+      "corrected": "Imerekebishwa na binadamu"
+    },
+    "history": {
+      "title": "Historia",
+      "empty": "Hakuna historia ya mtiririko bado."
+    },
+    "actions": {
+      "title": "Hatua zinazopatikana",
+      "none": "Hakuna hatua zinazopatikana",
+      "confirm": "Thibitisha",
+      "approve": "Idhinisha",
+      "final_approve": "Idhini ya mwisho",
+      "send_back": "Omba Marekebisho",
+      "send_back_to_staff": "Rudisha kwa Mhudumu",
+      "send_back_to_manager": "Rudisha kwa Meneja",
+      "escalate": "Peleka kwa Mkurugenzi",
+      "reject": "Kataa",
+      "resubmit": "Wasilisha tena",
+      "dialogTitle": "{{action}} waraka huu",
+      "dialogDescription": "Ongeza sababu ikiwa inahitajika kabla ya kuendelea.",
+      "reason": "Sababu",
+      "reasonPlaceholder": "Andika sababu fupi",
+      "submit": "Endelea"
+    },
+    "reclassify": {
+      "title": "Ainisha waraka upya",
+      "description": "Ainisha upya waraka huu kama {{type}}? Sehemu zilizotolewa zitatengenezwa upya kulingana na aina mpya.",
+      "confirm": "Ainisha upya",
+      "success": "Imeainishwa upya kama {{type}}"
+    },
+    "timeline": {
+      "confirm": "Imethibitishwa",
+      "approve": "Imeidhinishwa",
+      "final_approve": "Imeidhinishwa mwisho",
+      "send_back": "Imerejeshwa kwa marekebisho",
+      "send_back_to_staff": "Imerudishwa kwa mhudumu",
+      "send_back_to_manager": "Imerudishwa kwa meneja",
+      "escalate": "Imepelekwa kwa mkurugenzi",
+      "reject": "Imekataliwa",
+      "resubmit": "Imewasilishwa tena",
+      "reclassify": "Imeainishwa upya",
+      "correct_ai": "Sehemu za AI zimerekebishwa",
+      "correct_fields": "Sehemu zimerekebishwa",
+      "submit": "Imewasilishwa",
+      "default": "Mtiririko umesasishwa"
+    },
+    "messages": {
+      "loadError": "Imeshindikana kupakia waraka huu.",
+      "transitionSuccess": "Waraka umesasishwa kwa mafanikio.",
+      "transitionError": "Imeshindikana kusasisha waraka.",
+      "correctionSuccess": "Sehemu imesasishwa.",
+      "correctionError": "Imeshindikana kuhifadhi sehemu hii.",
+      "reclassifyError": "Imeshindikana kuainisha waraka huu upya."
+    }
+  },
+  "depositorShell": {
+    "subtitle": "Mfumo wa mteja",
+    "upload": "Pakua hati"
+  },
+  "depositorHome": {
+    "greetingEn": "Hello",
+    "greetingSw": "Habari",
+    "subtitle": "Una hati {{count}} zinazokaguliwa.",
+    "uploadTitle": "Pakua hati",
+    "uploadSubtitle": "Maombi · Risiti · Cheti · Ripoti",
+    "recent": "Hati zako za hivi karibuni",
+    "seeAll": "Ona zote",
+    "submittedAt": "Imewasilishwa {{time}}"
+  },
+  "depositorDocuments": {
+    "back": "Rudi nyumbani",
+    "title": "Hati zako"
+  },
+  "depositorDetail": {
+    "back": "Rudi kwenye hati",
+    "status": "Hali ya sasa",
+    "timeline": "Historia",
+    "download": "Pakua",
+    "correctionTitle": "Marekebisho yameombwa",
+    "noCorrectionNote": "Tafadhali kagua waraka na uwasilishe tena.",
+    "resubmit": "Pakia toleo lililosahihishwa tena",
+    "resubmitSuccess": "Waraka umewasilishwa tena.",
+    "loadError": "Imeshindikana kupakia waraka huu."
+  },
+  "depositorDownloads": {
+    "back": "Rudi nyumbani",
+    "title": "Vipakuzi vilivyoidhinishwa",
+    "download": "Pakua"
+  },
+  "depositorUpload": {
+    "back": "Rudi nyumbani",
+    "title": "Pakua hati",
+    "subtitle": "Chagua aina ya hati, pakia faili, kisha fuatilia uhakiki ukikamilika papo hapo.",
+    "typeHelp": "Chagua aina ya hati inayofanana zaidi ili uhakiki utumie masharti sahihi.",
+    "detailsHelp": "Weka kichwa kilicho wazi na uchague ghala linalohusika na hati hii.",
+    "fileHelp": "Pakia PDF au picha. Skani kubwa zinaweza kuchukua muda zaidi kuhakikiwa.",
+    "titleLabel": "Kichwa cha hati",
+    "titlePlaceholder": "mf. Ripoti ya ukaguzi wa ghala — Juni 2026",
+    "typeLabel": "Aina ya hati iliyochaguliwa",
+    "typePlaceholder": "Chagua aina ya hati hapo juu",
+    "warehouseLabel": "Ghala",
+    "warehousePlaceholder": "Chagua ghala",
+    "filePlaceholder": "Gusa kuchagua faili ya kuhakiki",
+    "fileFormats": "PDF, JPG, PNG, TIFF",
+    "genericDoc": "Sehemu zinazotakiwa zitakaguliwa kiotomatiki.",
+    "reset": "Anza upya",
+    "start": "Anza uhakiki",
+    "waiting": "Uhakiki bado haujaanza.",
+    "connecting": "Inafungua mtiririko salama wa uhakiki…",
+    "connected": "Imeunganishwa. Inasubiri hatua ya kwanza…",
+    "processing": "Uhakiki unaendelea…",
+    "reconnecting": "Muunganisho umekatika. Inaunganisha tena…",
+    "connectionClosed": "Mtiririko wa uhakiki umefungwa kabla matokeo ya mwisho hayajafika.",
+    "authRequired": "Kikao chako kimekwisha. Tafadhali ingia tena.",
+    "validationMissing": "Tafadhali chagua aina ya hati, ghala, kichwa, na faili kabla ya kuendelea.",
+    "startErrorTitle": "Imeshindikana kuanza upakiaji",
+    "startErrorBody": "Tafadhali kagua maelezo na ujaribu tena.",
+    "streamErrorTitle": "Mtiririko wa uhakiki umeshindwa",
+    "streamErrorBody": "Hatukuweza kukamilisha mtiririko wa uhakiki wa moja kwa moja. Tafadhali jaribu tena.",
+    "confirmErrorTitle": "Imeshindikana kukamilisha uwasilishaji",
+    "confirmErrorBody": "Upakiaji ulipita uhakiki, lakini hatua ya mwisho ya uwasilishaji imeshindwa.",
+    "passTitle": "Uhakiki umepita",
+    "passBody": "Hati imetimiza masharti muhimu na sasa inawasilishwa.",
+    "softWarningTitle": "Uhakiki umeona tahadhari",
+    "softWarningBody": "Unaweza kurekebisha mambo haya na kujaribu tena, au kuwasilisha kama yalivyo.",
+    "hardRejectTitle": "Uhakiki umekataa faili",
+    "hardRejectBody": "Hati haikuweza kupita ukaguzi wa chini kabisa. Tafadhali irekebishe na ujaribu tena.",
+    "fixAndRetry": "Rekebisha na upakie tena",
+    "submitAnyway": "Wasilisha hata hivyo",
+    "tryAgain": "Jaribu tena",
+    "successTitle": "Hati imewasilishwa",
+    "successBody": "{{title}} sasa iko kwenye mtiririko wa kazi na inaonekana kwenye orodha yako ya hati.",
+    "viewDocument": "Tazama hati",
+    "uploadAnother": "Pakia nyingine",
+    "steps": {
+      "type": "Chagua aina",
+      "details": "Weka maelezo",
+      "file": "Ambatisha faili",
+      "progress": "Fuatilia uhakiki",
+      "complete": "Maliza"
+    },
+    "stageLabels": {
+      "ocr": "Usomaji wa Hati",
+      "validation": "Ukaguzi wa AI wa Kanuni",
+      "final": "Usambazaji wa Kazi"
+    },
+    "stageHints": {
+      "ocr": "Google Cloud Vision inasoma na kubadilisha hati yako kuwa maandishi.",
+      "validation": "Gemini AI inakagua sehemu muhimu za TWLB na kanuni za udhibiti wa Tanzania.",
+      "final": "Hati inaelekezwa kwenye mchakato sahihi wa ukaguzi."
+    }
+  },
+  "placeholders": {
+    "title": "Itakuja katika awamu inayofuata",
+    "description": "Njia hii iko tayari kwa uzoefu wa Awamu ya 6."
+  },
+  "common": {
+    "loading": "Inapakia…",
+    "retry": "Jaribu tena",
+    "language": "Lugha",
+    "english": "Kiingereza",
+    "swahili": "Kiswahili",
+    "save": "Hifadhi",
+    "cancel": "Ghairi",
+    "openMenu": "Fungua menyu",
+    "openNotifications": "Fungua arifa"
+  },
+  "errors": {
+    "boundary": {
+      "title": "Kuna hitilafu imetokea",
+      "description": "Skrini hii imekumbana na tatizo lisilotarajiwa. Pakia upya programu ili kuendelea.",
+      "action": "Pakia upya programu"
+    },
+    "connectionToast": {
+      "title": "Tatizo la muunganisho",
+      "description": "API haipatikani kwa muda. Tafadhali jaribu tena baada ya muda mfupi."
+    },
+    "serverToast": {
+      "title": "Tatizo la seva",
+      "description": "Seva imerudisha hitilafu isiyotarajiwa. Tafadhali jaribu tena baada ya muda mfupi."
+    },
+    "offline": "Huna muunganisho wa intaneti. Baadhi ya vitendo vinaweza kutopatikana hadi muunganisho urudi.",
+    "apiUnreachable": "API haipatikani kwa sasa. {{message}}",
+    "apiUnreachableFallback": "Tafadhali jaribu tena baada ya muda mfupi."
+  },
+  "status": {
+    "DRAFT": "Rasimu",
+    "PENDING_STAFF": "Inasubiri uhakiki",
+    "PENDING_MANAGER": "Inasubiri meneja",
+    "PENDING_CEO": "Inasubiri CEO",
+    "APPROVED": "Imeidhinishwa",
+    "REJECTED": "Imekataliwa",
+    "CORRECTION_NEEDED": "Marekebisho yanahitajika"
+  },
+  "confidence": {
+    "high": "HIGH",
+    "medium": "MED",
+    "low": "LOW",
+    "none": "—"
+  }
+}

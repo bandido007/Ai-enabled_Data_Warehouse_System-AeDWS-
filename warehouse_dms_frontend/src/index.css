@@ -1,0 +1,84 @@
+@import './styles/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-feature-settings: 'tnum' on, 'lnum' on;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-canvas font-sans text-base text-text-primary;
+    min-height: 100vh;
+    margin: 0;
+  }
+
+  #root {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  button,
+  [role='button'],
+  input,
+  select,
+  textarea,
+  a {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 focus-visible:ring-offset-canvas;
+  }
+}
+
+@layer components {
+  .page-shell {
+    @apply mx-auto w-full max-w-shell px-8;
+  }
+
+  .panel-card {
+    @apply rounded-md border border-border bg-surface shadow-sm;
+  }
+
+  .eyebrow-label {
+    @apply font-mono text-xs uppercase tracking-[0.05em] text-text-tertiary;
+  }
+}
+
+@layer utilities {
+  .text-display {
+    letter-spacing: -0.02em;
+  }
+
+  .text-heading {
+    letter-spacing: -0.015em;
+  }
+
+  .transition-standard {
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 999px;
+  }
+}

@@ -1,0 +1,495 @@
+{
+  "app": {
+    "name": "Warehouse DMS",
+    "tagline": "Operational document control"
+  },
+  "auth": {
+    "title": "Sign in",
+    "subtitle": "Access the warehouse operations shell",
+    "identifier": "Email or username",
+    "password": "Password",
+    "submit": "Sign in",
+    "help": "Use your warehouse credentials to continue.",
+    "error": "Unable to sign in. Check your credentials and try again.",
+    "logout": "Log out"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "documents": "All documents",
+    "depositorHome": "Home",
+    "depositorDocuments": "My documents",
+    "depositorUpload": "Upload",
+    "depositorForms": "Fill a Form",
+    "depositorDownloads": "Downloads",
+    "staffPermissionForm": "Permission Request",
+    "uploadDocument": "Upload Document",
+    "search": "Search",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "warehouseCompliance": "Warehouse compliance",
+    "approvedDocuments": "Approved documents",
+    "inspectionReports": "Inspection reports",
+    "users": "Users",
+    "tenants": "Tenants",
+    "warehouses": "Warehouses",
+    "audit": "Audit log",
+    "analytics": "Analytics",
+    "workspace": "Workspace",
+    "account": "Account"
+  },
+  "commandPalette": {
+    "placeholder": "Search documents, warehouses, users...",
+    "empty": "No quick actions found",
+    "searchResults": "Search results",
+    "quickActions": "Quick actions",
+    "openFullSearch": "Open full search",
+    "noResults": "No results yet",
+    "modes": {
+      "auto": "Auto",
+      "keyword": "Keyword",
+      "semantic": "Semantic"
+    }
+  },
+  "searchPage": {
+    "title": "Search",
+    "subtitle": "Search documents by exact keywords or broader semantic meaning.",
+    "placeholder": "Search extracted text, document titles, warehouses...",
+    "scope": "Results are limited to your current role scope.",
+    "count": "{{count}} results",
+    "detected": "Auto selected {{mode}} mode",
+    "relevance": "Relevance",
+    "noSnippet": "No preview available",
+    "modes": {
+      "auto": "Auto",
+      "keyword": "Keyword",
+      "semantic": "Semantic"
+    },
+    "initial": {
+      "title": "Start typing to search",
+      "description": "Use at least two characters to search documents in your current scope."
+    },
+    "empty": {
+      "title": "No matching documents",
+      "description": "No results were found for “{{query}}”. Try another phrase or switch search mode."
+    }
+  },
+  "dashboard": {
+    "hello": "Hello",
+    "habari": "Habari",
+    "subtitle": "{{count}} documents in your operational scope",
+    "queueTitle": "Work queue",
+    "activityTitle": "Recent activity",
+    "emptyQueue": "No items need attention right now.",
+    "emptyActivity": "Recent transitions will appear here once the team starts processing documents.",
+    "metrics": {
+      "awaitingReview": "Awaiting review",
+      "processedToday": "Processed today",
+      "correctionsSent": "Corrections sent",
+      "avgReviewTime": "Avg review time",
+      "pendingApproval": "Pending approval",
+      "approvedThisWeek": "Approved this week",
+      "rejectedThisWeek": "Rejected this week",
+      "avgApprovalTime": "Avg approval time",
+      "tenantDocuments": "Tenant documents",
+      "finalApprovals": "Final approvals"
+    }
+  },
+  "documents": {
+    "title": "All documents",
+    "subtitle": "Monitor document flow, confidence, and routing.",
+    "filters": {
+      "search": "Search documents",
+      "status": "Status",
+      "type": "Document type",
+      "warehouse": "Warehouse",
+      "startDate": "From",
+      "endDate": "To",
+      "all": "All"
+    },
+    "actions": {
+      "filter": "Filter",
+      "export": "Export CSV",
+      "clear": "Clear"
+    },
+    "table": {
+      "title": "Queue",
+      "columns": {
+        "id": "ID",
+        "document": "Document",
+        "type": "Type",
+        "warehouse": "Warehouse",
+        "depositor": "Depositor",
+        "confidence": "AI Conf.",
+        "status": "Status",
+        "submitted": "Submitted"
+      }
+    },
+    "empty": {
+      "title": "No documents found",
+      "description": "Try broadening your filters or search term."
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{current}} of {{total}}"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unread": "Unread",
+    "markAllRead": "Mark all read",
+    "empty": "You're all caught up.",
+    "viewAll": "Coming in next phase"
+  },
+  "notificationPreferences": {
+    "title": "Notification Preferences",
+    "subtitle": "Choose which channels you want to use for each type of notification.",
+    "columns": {
+      "event": "Event type",
+      "dashboard": "Dashboard",
+      "email": "Email",
+      "sms": "SMS"
+    },
+    "dashboardHint": "Dashboard notifications cannot be disabled",
+    "smsHint": "SMS charges may apply based on your region",
+    "save": "Save",
+    "reset": "Reset",
+    "saved": "Preferences saved",
+    "saveError": "Unable to save preferences",
+    "empty": {
+      "title": "No preferences available",
+      "description": "Notification preferences will appear here once the backend returns available event types."
+    }
+  },
+  "notificationEvents": {
+    "DOCUMENT_UPLOADED": "Document uploaded",
+    "DOCUMENT_VALIDATED": "Document validated",
+    "DOCUMENT_CONFIRMED_BY_STAFF": "Staff confirmed document",
+    "DOCUMENT_APPROVED_BY_MANAGER": "Manager approved document",
+    "DOCUMENT_APPROVED_BY_CEO": "CEO approved document",
+    "DOCUMENT_REJECTED": "Document rejected",
+    "DOCUMENT_SENT_BACK": "Document sent back",
+    "DOCUMENT_APPROVED_FINAL": "Document finally approved",
+    "RANKING_REPORT_UPDATED": "Ranking report updated"
+  },
+  "regulator": {
+    "subtitle": "Regulatory oversight workspace",
+    "jurisdictionFallback": "National jurisdiction",
+    "dashboard": {
+      "title": "Compliance Overview",
+      "subtitle": "Current-state oversight across your jurisdiction.",
+      "metrics": {
+        "warehouses": "Warehouses in jurisdiction",
+        "highRisk": "High-risk warehouses",
+        "averageCompliance": "Average compliance",
+        "inspections": "Inspections this quarter"
+      },
+      "warehouseSection": "Warehouses",
+      "byNumbers": "By the numbers",
+      "sort": {
+        "label": "Sort by",
+        "name": "Name",
+        "score": "Score",
+        "region": "Region",
+        "activity": "Activity"
+      },
+      "table": {
+        "position": "#",
+        "warehouse": "Warehouse",
+        "score": "Score",
+        "documents": "Documents",
+        "activity": "Last activity"
+      },
+      "totals": {
+        "documents": "Total documents",
+        "approved": "Approved documents",
+        "corrections": "Corrections requested",
+        "inspectionForms": "Inspection forms"
+      },
+      "empty": {
+        "title": "No warehouses available",
+        "description": "Warehouses in the regulator view will appear here once jurisdiction data is available."
+      }
+    },
+    "detail": {
+      "back": "Back to overview",
+      "metrics": {
+        "ranking": "Current ranking score",
+        "risk": "Risk category",
+        "documents": "Total documents",
+        "activity": "Last activity"
+      },
+      "breakdown": "Document breakdown",
+      "byType": "By type",
+      "recent": "Recent activity",
+      "recentEmpty": "Recent jurisdiction documents will appear here when regulator document scoping is enabled.",
+      "loadError": "Unable to load warehouse statistics."
+    },
+    "documents": {
+      "title": "Approved Documents",
+      "subtitle": "Read-only view of documents visible within the regulator scope.",
+      "empty": {
+        "title": "No regulator documents found",
+        "description": "Documents will appear here once regulator document scoping is enabled on the backend."
+      }
+    },
+    "inspections": {
+      "title": "Inspection Reports",
+      "subtitle": "Inspection-form documents across the jurisdiction.",
+      "columns": {
+        "warehouse": "Warehouse",
+        "date": "Inspection date",
+        "inspector": "Inspector",
+        "summary": "Findings"
+      }
+    },
+    "readOnly": {
+      "title": "Document view",
+      "summary": "AI summary",
+      "fields": "Extracted fields",
+      "history": "Transition history",
+      "loadError": "Unable to load this regulator document."
+    },
+    "risk": {
+      "LOW": "Low risk",
+      "MEDIUM": "Medium risk",
+      "HIGH": "High risk",
+      "none": "Not scored"
+    }
+  },
+  "documentReview": {
+    "titleFallback": "Document review",
+    "documentTab": "Document",
+    "reviewTab": "Review",
+    "viewer": {
+      "pageLabel": "page {{current}} of {{total}}",
+      "zoomOut": "Zoom out",
+      "zoomIn": "Zoom in",
+      "fitWidth": "Fit width",
+      "fitPage": "Fit page",
+      "openReview": "Open review panel",
+      "fileUnavailable": "Document preview is unavailable.",
+      "download": "Download file",
+      "alt": "Document preview"
+    },
+    "header": {
+      "uploadedBy": "Uploaded by {{name}} · {{time}}"
+    },
+    "summary": {
+      "title": "AI Summary",
+      "confidence": "{{value}} confidence"
+    },
+    "fields": {
+      "title": "Extracted fields",
+      "typeLabel": "Classification",
+      "typePlaceholder": "Select document type",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "saveFailed": "Could not save",
+      "empty": "No extracted fields available yet.",
+      "emptyProcessed": "The AI processed this document but found no fillable field values — this may be a blank template, a low-quality scan, or a document where fields are not applicable.",
+      "reclassifying": "Reclassifying — this can take 30–60 seconds",
+      "takingLonger": "Taking longer than expected.",
+      "refresh": "Refresh now",
+      "corrected": "Human-corrected"
+    },
+    "history": {
+      "title": "History",
+      "empty": "No workflow history yet."
+    },
+    "actions": {
+      "title": "Available actions",
+      "none": "No actions available",
+      "confirm": "Confirm",
+      "approve": "Approve",
+      "final_approve": "Final Approve",
+      "send_back": "Request Correction",
+      "send_back_to_staff": "Return to Staff",
+      "send_back_to_manager": "Return to Manager",
+      "escalate": "Escalate to CEO",
+      "reject": "Reject",
+      "resubmit": "Resubmit",
+      "dialogTitle": "{{action}} this document",
+      "dialogDescription": "Add a reason if needed before continuing.",
+      "reason": "Reason",
+      "reasonPlaceholder": "Type a short reason",
+      "submit": "Continue"
+    },
+    "reclassify": {
+      "title": "Reclassify document",
+      "description": "Reclassify this document as {{type}}? The extracted fields will be regenerated based on the new type.",
+      "confirm": "Reclassify",
+      "success": "Reclassified as {{type}}"
+    },
+    "timeline": {
+      "confirm": "Confirmed",
+      "approve": "Approved",
+      "final_approve": "Final approved",
+      "send_back": "Returned for correction",
+      "send_back_to_staff": "Returned to staff",
+      "send_back_to_manager": "Returned to manager",
+      "escalate": "Escalated to CEO",
+      "reject": "Rejected",
+      "resubmit": "Resubmitted",
+      "reclassify": "Reclassified",
+      "correct_ai": "Corrected AI fields",
+      "correct_fields": "Corrected fields",
+      "submit": "Submitted",
+      "default": "Updated workflow"
+    },
+    "messages": {
+      "loadError": "Unable to load this document.",
+      "transitionSuccess": "Document updated successfully.",
+      "transitionError": "Unable to update the document.",
+      "correctionSuccess": "Field updated.",
+      "correctionError": "Unable to save this field.",
+      "reclassifyError": "Unable to reclassify this document."
+    }
+  },
+  "depositorShell": {
+    "subtitle": "Depositor portal",
+    "upload": "Upload a document"
+  },
+  "depositorHome": {
+    "greetingEn": "Hello",
+    "greetingSw": "Habari",
+    "subtitle": "You have {{count}} document(s) under review.",
+    "uploadTitle": "Upload a document",
+    "uploadSubtitle": "Application · Receipt · Certificate · Report",
+    "recent": "Recent documents",
+    "seeAll": "See all",
+    "submittedAt": "Submitted {{time}}"
+  },
+  "depositorDocuments": {
+    "back": "Back home",
+    "title": "Your documents"
+  },
+  "depositorDetail": {
+    "back": "Back to documents",
+    "status": "Current status",
+    "timeline": "Timeline",
+    "download": "Download",
+    "correctionTitle": "Correction requested",
+    "noCorrectionNote": "Please review the document and submit again.",
+    "resubmit": "Re-upload corrected version",
+    "resubmitSuccess": "Document resubmitted.",
+    "loadError": "Unable to load this document."
+  },
+  "depositorDownloads": {
+    "back": "Back home",
+    "title": "Approved downloads",
+    "download": "Download"
+  },
+  "depositorUpload": {
+    "back": "Back home",
+    "title": "Upload a document",
+    "subtitle": "Pick a document type, attach the file, then watch validation complete in real time.",
+    "typeHelp": "Choose the closest document type first so validation uses the right rules.",
+    "detailsHelp": "Add a clear title and select the warehouse this document belongs to.",
+    "fileHelp": "Upload a PDF or image. Larger scans may take a little longer to validate.",
+    "titleLabel": "Document title",
+    "titlePlaceholder": "e.g. Warehouse inspection report — June 2026",
+    "typeLabel": "Selected document type",
+    "typePlaceholder": "Choose a document type above",
+    "warehouseLabel": "Warehouse",
+    "warehousePlaceholder": "Select warehouse",
+    "filePlaceholder": "Tap to choose the file to validate",
+    "fileFormats": "PDF, JPG, PNG, TIFF",
+    "genericDoc": "Required fields will be checked automatically.",
+    "reset": "Reset",
+    "start": "Start validation",
+    "waiting": "Validation has not started yet.",
+    "connecting": "Opening secure validation stream…",
+    "connected": "Connected. Waiting for the first stage…",
+    "processing": "Validation in progress…",
+    "reconnecting": "Connection lost. Reconnecting…",
+    "connectionClosed": "The validation stream closed before a final result was received.",
+    "authRequired": "Your session has expired. Please sign in again.",
+    "validationMissing": "Please select a document type, warehouse, title, and file before continuing.",
+    "startErrorTitle": "Could not start upload",
+    "startErrorBody": "Please review the details and try again.",
+    "streamErrorTitle": "Validation stream failed",
+    "streamErrorBody": "We could not finish the real-time validation stream. Please retry.",
+    "confirmErrorTitle": "Could not complete submission",
+    "confirmErrorBody": "The upload passed validation, but the final submission step failed.",
+    "passTitle": "Validation passed",
+    "passBody": "The document met the required checks and is being submitted now.",
+    "softWarningTitle": "Validation found warnings",
+    "softWarningBody": "You can fix these issues and try again, or submit anyway.",
+    "hardRejectTitle": "Validation rejected the file",
+    "hardRejectBody": "The document could not pass minimum checks. Please correct it and retry.",
+    "fixAndRetry": "Fix and re-upload",
+    "submitAnyway": "Submit anyway",
+    "tryAgain": "Try again",
+    "successTitle": "Document submitted",
+    "successBody": "{{title}} is now in the workflow and visible in your document list.",
+    "viewDocument": "View document",
+    "uploadAnother": "Upload another",
+    "steps": {
+      "type": "Choose type",
+      "details": "Add details",
+      "file": "Attach file",
+      "progress": "Watch validation",
+      "complete": "Finish"
+    },
+    "stageLabels": {
+      "ocr": "Document Scanning",
+      "validation": "AI Regulatory Review",
+      "final": "Workflow Routing"
+    },
+    "stageHints": {
+      "ocr": "Google Cloud Vision is reading and digitizing your document.",
+      "validation": "Gemini AI is verifying required TWLB fields against Tanzanian regulatory rules.",
+      "final": "Routing the document into the correct review workflow."
+    }
+  },
+  "placeholders": {
+    "title": "Coming in next phase",
+    "description": "This route is wired and ready for the Phase 6 experience."
+  },
+  "common": {
+    "loading": "Loading…",
+    "retry": "Retry",
+    "language": "Language",
+    "english": "English",
+    "swahili": "Swahili",
+    "save": "Save",
+    "cancel": "Cancel",
+    "openMenu": "Open menu",
+    "openNotifications": "Open notifications"
+  },
+  "errors": {
+    "boundary": {
+      "title": "Something went wrong",
+      "description": "This screen hit an unexpected problem. Reload the app to continue.",
+      "action": "Reload app"
+    },
+    "connectionToast": {
+      "title": "Connection problem",
+      "description": "The API is temporarily unreachable. Please retry in a moment."
+    },
+    "serverToast": {
+      "title": "Server problem",
+      "description": "The server returned an unexpected error. Please retry shortly."
+    },
+    "offline": "You are offline. Some actions may be unavailable until your connection returns.",
+    "apiUnreachable": "The API is currently unreachable. {{message}}",
+    "apiUnreachableFallback": "Please try again shortly."
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "PENDING_STAFF": "Pending review",
+    "PENDING_MANAGER": "Pending manager",
+    "PENDING_CEO": "Pending CEO",
+    "APPROVED": "Approved",
+        "warehouse": "Warehouse",
+    "REJECTED": "Rejected",
+    "CORRECTION_NEEDED": "Correction needed"
+  },
+  "confidence": {
+    "high": "HIGH",
+    "medium": "MED",
+    "low": "LOW",
+    "none": "—"
+  }
+}
