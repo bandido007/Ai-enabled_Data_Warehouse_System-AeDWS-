@@ -1,5 +1,7 @@
 from typing import List, Optional
 
+from pydantic import model_validator
+
 from wdms_utils.SharedSerializer import (
     BaseInputSerializer,
     BaseNonPagedResponseData,
@@ -48,6 +50,28 @@ class TenantTableSerializer(BaseSerializer):
     region_name: Optional[str] = None
     logo_url: str = ""
 
+    @model_validator(mode="before")
+    @classmethod
+    def extract_related_fields(cls, data):
+        if hasattr(data, "region"):
+            return {
+                "id": data.pk,
+                "unique_id": data.unique_id,
+                "created_date": data.created_date,
+                "updated_date": data.updated_date,
+                "is_active": data.is_active,
+                "created_by": data.created_by,
+                "name": data.name,
+                "registration_number": data.registration_number,
+                "phone_number": data.phone_number,
+                "email": data.email,
+                "address": data.address,
+                "region_id": data.region_id,
+                "region_name": data.region.name if data.region else None,
+                "logo_url": data.logo_url,
+            }
+        return data
+
 
 class TenantInputSerializer(BaseInputSerializer):
     name: str
@@ -86,6 +110,32 @@ class WarehouseTableSerializer(BaseSerializer):
     capacity_unit: str = "MT"
     registration_number: str = ""
     is_verified: bool = False
+
+    @model_validator(mode="before")
+    @classmethod
+    def extract_related_fields(cls, data):
+        if hasattr(data, "tenant"):
+            return {
+                "id": data.pk,
+                "unique_id": data.unique_id,
+                "created_date": data.created_date,
+                "updated_date": data.updated_date,
+                "is_active": data.is_active,
+                "created_by": data.created_by,
+                "name": data.name,
+                "tenant_id": data.tenant_id,
+                "tenant_name": data.tenant.name if data.tenant else None,
+                "region_id": data.region_id,
+                "region_name": data.region.name if data.region else None,
+                "address": data.address,
+                "phone_number": data.phone_number,
+                "email": data.email,
+                "capacity": data.capacity,
+                "capacity_unit": data.capacity_unit,
+                "registration_number": data.registration_number,
+                "is_verified": data.is_verified,
+            }
+        return data
 
 
 class WarehouseInputSerializer(BaseInputSerializer):

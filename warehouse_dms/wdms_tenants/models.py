@@ -45,6 +45,10 @@ class Tenant(BaseModel):
     def __str__(self):
         return self.name
 
+    @property
+    def region_name(self):
+        return self.region.name if self.region else None
+
 
 class Warehouse(BaseModel):
     """A physical warehouse belonging to a tenant."""
@@ -75,3 +79,11 @@ class Warehouse(BaseModel):
 
     def __str__(self):
         return f"{self.name} ({self.tenant.name})"
+
+    @property
+    def tenant_name(self):
+        return self.tenant.name if self.tenant else None
+
+    @property
+    def region_name(self):
+        return self.region.name if self.region else None

@@ -5,6 +5,7 @@ from wdms_accounts.views import accounts_router
 from wdms_documents.views import documents_router
 from wdms_notifications.views import notifications_router
 from wdms_regulatory.views import regulatory_router
+from wdms_reports.views import reports_router
 from wdms_tenants.views import tenants_router
 from wdms_uaa.views import auth_router
 
@@ -21,3 +22,4 @@ api_v1.add_router("/tenants/", tenants_router)
 api_v1.add_router("/documents/", documents_router)
 api_v1.add_router("/notifications/", notifications_router)
 api_v1.add_router("/regulatory/", regulatory_router)
+api_v1.add_router("/reports/", reports_router)

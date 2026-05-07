@@ -150,7 +150,13 @@ def create_tenant(request: HttpRequest, input: TenantInputSerializer):
     try:
         region = None
         if input.region_unique_id:
-            region = Region.objects.filter(unique_id=input.region_unique_id).first()
+            region = Region.objects.filter(
+                unique_id=input.region_unique_id, is_active=True
+            ).first()
+            if not region:
+                return TenantNonPagedResponseSerializer(
+                    response=ResponseObject.get_response(3, "Region not found")
+                )
 
         tenant = Tenant.objects.create(
             name=input.name,
@@ -183,12 +189,14 @@ def list_warehouses(
     filtering: Query[WarehouseFilteringSerializer] = None,
 ):
     try:
-        if getattr(request.user, "is_superuser", False):
+        role = _get_user_role(request.user)
+        if getattr(request.user, "is_superuser", False) or role == "ADMIN":
             queryset = Warehouse.objects.filter(is_active=True)
-        elif _get_user_role(request.user) == "REGULATOR":
+        elif role == "REGULATOR":
             queryset = get_regulator_queryset(request.user)
         else:
             queryset = get_tenant_queryset(request.user)
+        queryset = queryset.select_related("tenant", "region", "created_by")
         return get_paginated_and_non_paginated_data(
             queryset, filtering, WarehousePagedResponseSerializer
         )
@@ -214,7 +222,13 @@ def create_warehouse(request: HttpRequest, input: WarehouseInputSerializer):
 
         region = None
         if input.region_unique_id:
-            region = Region.objects.filter(unique_id=input.region_unique_id).first()
+            region = Region.objects.filter(
+                unique_id=input.region_unique_id, is_active=True
+            ).first()
+            if not region:
+                return WarehouseNonPagedResponseSerializer(
+                    response=ResponseObject.get_response(3, "Region not found")
+                )
 
         warehouse = Warehouse.objects.create(
             name=input.name,
@@ -252,12 +266,27 @@ def update_warehouse(request: HttpRequest, unique_id: str, input: WarehouseInput
                 response=ResponseObject.get_response(3, "Warehouse not found")
             )
 
+        tenant = Tenant.objects.filter(
+            unique_id=input.tenant_unique_id, is_active=True
+        ).first()
+        if not tenant:
+            return WarehouseNonPagedResponseSerializer(
+                response=ResponseObject.get_response(3, "Tenant not found")
+            )
+
+        region = warehouse.region
         if input.region_unique_id:
-            region = Region.objects.filter(unique_id=input.region_unique_id).first()
-            if region:
-                warehouse.region = region
+            region = Region.objects.filter(
+                unique_id=input.region_unique_id, is_active=True
+            ).first()
+            if not region:
+                return WarehouseNonPagedResponseSerializer(
+                    response=ResponseObject.get_response(3, "Region not found")
+                )
 
         warehouse.name = input.name or warehouse.name
+        warehouse.tenant = tenant
+        warehouse.region = region
         warehouse.address = input.address or warehouse.address
         warehouse.phone_number = input.phone_number or warehouse.phone_number
         warehouse.email = input.email or warehouse.email
@@ -314,12 +343,18 @@ def update_tenant(request: HttpRequest, unique_id: str, input: TenantInputSerial
             return TenantNonPagedResponseSerializer(
                 response=ResponseObject.get_response(3, "Tenant not found")
             )
+        region = tenant.region
         if input.region_unique_id:
-            region = Region.objects.filter(unique_id=input.region_unique_id).first()
-            if region:
-                tenant.region = region
+            region = Region.objects.filter(
+                unique_id=input.region_unique_id, is_active=True
+            ).first()
+            if not region:
+                return TenantNonPagedResponseSerializer(
+                    response=ResponseObject.get_response(3, "Region not found")
+                )
 
         tenant.name = input.name or tenant.name
+        tenant.region = region
         tenant.registration_number = input.registration_number or tenant.registration_number
         tenant.phone_number = input.phone_number or tenant.phone_number
         tenant.email = input.email or tenant.email
