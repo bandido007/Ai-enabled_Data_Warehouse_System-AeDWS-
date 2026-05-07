@@ -23,6 +23,7 @@ env/
 service.json
 *service-account*.json
 *service_account*.json
+warehouse_dms/eztr.txt
 
 # Django
 *.log
