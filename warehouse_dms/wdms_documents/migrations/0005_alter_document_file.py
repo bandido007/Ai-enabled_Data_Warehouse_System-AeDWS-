@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wdms_documents', '0004_alter_document_created_date_and_more'),
+        ('wdms_documents', '0003_rename_documents_warehou_1f1f00_idx_documents_warehou_b7faa0_idx_and_more'),
     ]
 
     operations = [

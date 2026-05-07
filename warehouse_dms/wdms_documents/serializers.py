@@ -170,6 +170,7 @@ class DocumentFilteringSerializer(BasePagedFilteringSerializer):
     document_type_id: Optional[str] = None
     uploader_id: Optional[int] = None
     warehouse_id: Optional[int] = None
+    search_term: Optional[str] = None
 
 
 class DocumentPagedResponseSerializer(BasePagedResponseList):

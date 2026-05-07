@@ -832,6 +832,126 @@
         "WRRB compliance assessment",
         "regulation 15(2) compliance"
       ]
+    },
+    {
+      "id": "regulatory_ranking_report",
+      "label": "Regulatory Warehouse Ranking Report",
+      "category": "REPORT",
+      "initial_state": "APPROVED",
+      "allowed_uploader_roles": ["REGULATOR", "ADMIN"],
+      "allowed_transitions": [],
+      "required_fields": [
+        "warehouse_name",
+        "ranking_period",
+        "final_score",
+        "risk_category",
+        "issuing_authority",
+        "date"
+      ],
+      "optional_fields": [
+        "approved_documents",
+        "inspection_score",
+        "correction_rate",
+        "recommendations",
+        "ai_explanation"
+      ],
+      "file_formats": ["pdf"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.80,
+        "require_signature": true,
+        "require_stamp": true,
+        "require_date": true,
+        "notes": "Ranking report issued by the regulatory body to a warehouse. Used to communicate warehouse ranking and risk category derived from approved documents, inspection records, corrections, and compliance evidence."
+      },
+      "classification_hints": [
+        "ranking report",
+        "warehouse ranking",
+        "regulatory body warehouse ranking",
+        "risk category compliance score",
+        "warehouse compliance ranking"
+      ]
+    },
+    {
+      "id": "regulatory_inspection_report",
+      "label": "Regulatory Inspection Report",
+      "category": "REPORT",
+      "initial_state": "APPROVED",
+      "allowed_uploader_roles": ["REGULATOR", "ADMIN"],
+      "allowed_transitions": [],
+      "required_fields": [
+        "warehouse_name",
+        "inspection_date",
+        "inspector_name",
+        "findings",
+        "issuing_authority",
+        "date"
+      ],
+      "optional_fields": [
+        "recommendations",
+        "corrective_actions",
+        "follow_up_date",
+        "photographs_attached"
+      ],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.80,
+        "require_signature": true,
+        "require_stamp": true,
+        "require_date": true,
+        "notes": "Inspection report issued by the regulatory body to a warehouse after regulatory inspection. Supports monitoring, audit, compliance decisions, and warehouse ranking."
+      },
+      "classification_hints": [
+        "inspection report",
+        "regulatory inspection",
+        "warehouse inspection findings",
+        "regulatory body warehouse inspection",
+        "corrective actions"
+      ]
+    },
+    {
+      "id": "warehouse_operation_cost_report",
+      "label": "Warehouse Operation Cost Structure Report",
+      "category": "REPORT",
+      "initial_state": "PENDING_MANAGER",
+      "allowed_uploader_roles": ["STAFF"],
+      "allowed_transitions": [
+        { "from_state": "PENDING_MANAGER", "to_state": "PENDING_CEO",       "required_role": "MANAGER", "action": "approve" },
+        { "from_state": "PENDING_MANAGER", "to_state": "CORRECTION_NEEDED", "required_role": "MANAGER", "action": "send_back", "reason_required": true },
+        { "from_state": "PENDING_CEO",     "to_state": "APPROVED",          "required_role": "CEO",     "action": "final_approve" },
+        { "from_state": "PENDING_CEO",     "to_state": "CORRECTION_NEEDED", "required_role": "CEO",     "action": "send_back", "reason_required": true },
+        { "from_state": "CORRECTION_NEEDED", "to_state": "PENDING_MANAGER", "required_role": "STAFF",   "action": "resubmit" }
+      ],
+      "required_fields": [
+        "warehouse_name",
+        "reporting_period",
+        "storage_costs",
+        "handling_costs",
+        "total_operating_cost",
+        "prepared_by",
+        "date"
+      ],
+      "optional_fields": [
+        "labor_costs",
+        "utilities_costs",
+        "maintenance_costs",
+        "security_costs",
+        "remarks"
+      ],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.75,
+        "require_signature": true,
+        "require_stamp": false,
+        "require_date": true,
+        "notes": "Warehouse operation cost structure report submitted by the warehouse to the regulatory body. Once approved, regulators can retrieve it for compliance and operational monitoring."
+      },
+      "classification_hints": [
+        "warehouse operation cost structure",
+        "operation cost report",
+        "warehouse costs regulatory",
+        "storage handling labor utilities costs",
+        "warehouse financial operations report"
+      ]
     }
   ]
 }

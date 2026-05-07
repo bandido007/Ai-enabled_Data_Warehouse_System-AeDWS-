@@ -4,7 +4,7 @@ from django.http import HttpRequest
 from ninja import Query, Router
 
 from wdms_tenants.models import Region, Tenant, Warehouse
-from wdms_tenants.querysets import get_tenant_queryset
+from wdms_tenants.querysets import get_regulator_queryset, get_tenant_queryset
 from wdms_tenants.serializers import (
     RegionFilteringSerializer,
     RegionInputSerializer,
@@ -23,6 +23,7 @@ from wdms_tenants.serializers import (
     WarehouseTableSerializer,
 )
 from wdms_uaa.authorization import PermissionAuth
+from wdms_uaa.models import UsersWithRoles
 from wdms_utils.response import ResponseObject, get_paginated_and_non_paginated_data
 from wdms_utils.SharedSerializer import BaseNonPagedResponseData
 
@@ -32,6 +33,15 @@ tenants_router = Router()
 
 _admin_auth = PermissionAuth(required_permissions=["manage_tenants"])
 _auth = PermissionAuth()
+
+
+def _get_user_role(user) -> str | None:
+    user_role = (
+        UsersWithRoles.objects.filter(user_with_role_user=user, is_active=True)
+        .select_related("user_with_role_role")
+        .first()
+    )
+    return user_role.user_with_role_role.name if user_role else None
 
 
 # ── Regions ───────────────────────────────────────────────────────────────────
@@ -173,7 +183,12 @@ def list_warehouses(
     filtering: Query[WarehouseFilteringSerializer] = None,
 ):
     try:
-        queryset = get_tenant_queryset(request.user)
+        if getattr(request.user, "is_superuser", False):
+            queryset = Warehouse.objects.filter(is_active=True)
+        elif _get_user_role(request.user) == "REGULATOR":
+            queryset = get_regulator_queryset(request.user)
+        else:
+            queryset = get_tenant_queryset(request.user)
         return get_paginated_and_non_paginated_data(
             queryset, filtering, WarehousePagedResponseSerializer
         )

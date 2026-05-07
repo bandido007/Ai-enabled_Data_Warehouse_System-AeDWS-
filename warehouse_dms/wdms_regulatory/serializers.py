@@ -36,8 +36,8 @@ class WarehouseStatisticsSerializer(BaseSchema):
     # Temporal
     last_activity_at: Optional[date] = None
 
-    # Ranking — null until the WarehouseRanking model is implemented in a
-    # later phase.  The frontend must treat null gracefully (show "—").
+    # Ranking — populated from the latest WarehouseRanking row when available.
+    # The frontend still treats null gracefully if ranking computation fails.
     current_ranking_score: Optional[float] = None
     risk_category: Optional[str] = None
 

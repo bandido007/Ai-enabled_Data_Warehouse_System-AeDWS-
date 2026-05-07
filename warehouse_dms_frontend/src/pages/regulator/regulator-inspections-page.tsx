@@ -12,11 +12,19 @@ import { normalizeFieldValue } from '@/lib/document-review'
 import { useDocumentsQuery } from '@/lib/queries'
 import { formatShortDate } from '@/lib/utils'
 
+const INSPECTION_DOCUMENT_TYPES = new Set([
+  'inspection_form',
+  'regulatory_inspection_report',
+  'warehouse_compliance_report',
+])
+
 export function RegulatorInspectionsPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const documentsQuery = useDocumentsQuery({ itemsPerPage: 20, documentTypeId: 'inspection_form' }, true)
-  const documents = documentsQuery.data?.data ?? []
+  const documentsQuery = useDocumentsQuery({ itemsPerPage: 50 }, true)
+  const documents = (documentsQuery.data?.data ?? []).filter((document) =>
+    INSPECTION_DOCUMENT_TYPES.has(document.documentTypeId)
+  )
 
   return (
     <div className="space-y-6">

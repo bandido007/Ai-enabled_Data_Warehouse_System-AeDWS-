@@ -97,6 +97,18 @@ const DOCUMENT_TYPE_HELP: Record<string, string> = {
     'After upload, the warehouse CEO/Manager must formally acknowledge receipt. ' +
     'Issued under Regulation 15(2) of Warehouse Receipt Regulations 2016.',
 
+  regulatory_ranking_report:
+    'Regulatory Warehouse Ranking Report. Upload the official ranking report issued by the regulatory body to a warehouse. ' +
+    'Include the ranking period, compliance score, risk category, issuing authority, recommendations, and explanation.',
+
+  regulatory_inspection_report:
+    'Regulatory Inspection Report. Upload the official inspection findings issued by the regulatory body to a warehouse. ' +
+    'Include inspection date, inspector name, findings, recommendations, corrective actions, and follow-up details.',
+
+  warehouse_operation_cost_report:
+    'Warehouse Operation Cost Structure Report. Staff upload this for Manager and CEO approval before it becomes visible to regulators. ' +
+    'Include storage, handling, labor, utilities, maintenance, security, and total operating costs.',
+
   warehouse_receipt:
     'Warehouse Delivery Receipt. Records that goods have been received into the warehouse. ' +
     'Required: depositor name, goods description, quantity, receipt date.',
@@ -297,7 +309,7 @@ export function ScanUploadPage() {
       setConnectionMessage('Connecting to validation pipeline…')
       setStreamEvents([])
       try {
-        await subscribeToStream(streamUrl, nextAttemptId)
+        await subscribeToStream(streamUrl)
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Stream error'
         setValidationState('error')
@@ -340,7 +352,7 @@ export function ScanUploadPage() {
   }
 
   // ── SSE stream ─────────────────────────────────────────────────────────────
-  async function subscribeToStream(streamPath: string, _nextAttemptId: number) {
+  async function subscribeToStream(streamPath: string) {
     if (!accessToken) throw new Error('Authentication token is missing.')
     streamAbortRef.current?.abort()
     const controller = new AbortController()

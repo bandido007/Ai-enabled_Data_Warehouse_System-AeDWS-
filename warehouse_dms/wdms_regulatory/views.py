@@ -72,8 +72,8 @@ def get_warehouse_statistics(request: HttpRequest, warehouse_id: int):
     outside that scope returns a business-failure response rather than 403 so
     the response shape stays consistent with the standard envelope.
 
-    Ranking fields (currentRankingScore, riskCategory) are null until the
-    WarehouseRanking model is implemented in a later phase.
+    Ranking fields come from the latest WarehouseRanking row. If none exists
+    yet, the rule-based ranking engine computes one on demand.
     """
     try:
         role = _get_user_role(request.user)
@@ -173,10 +173,29 @@ def get_warehouse_statistics(request: HttpRequest, warehouse_id: int):
                 compliance_trend = "STABLE"
 
         # ── Ranking data ──────────────────────────────────────────────────────
-        # WarehouseRanking model is not yet implemented.  Both fields are null
-        # until Phase 6+ adds the reports app models.
         current_ranking_score = None
         risk_category = None
+        try:
+            from wdms_reports.models import WarehouseRanking
+            from wdms_reports.ranking import compute_ranking
+
+            ranking = WarehouseRanking.objects.filter(
+                warehouse=warehouse,
+                is_latest=True,
+                is_active=True,
+            ).order_by("-created_date").first()
+
+            if ranking is None:
+                ranking = compute_ranking(warehouse)
+
+            current_ranking_score = ranking.final_score
+            risk_category = ranking.risk_category
+        except Exception as ranking_exc:
+            logger.warning(
+                "Ranking unavailable for warehouse_id=%s: %s",
+                warehouse_id,
+                ranking_exc,
+            )
 
         stats = WarehouseStatisticsSerializer(
             warehouse_id=warehouse.pk,

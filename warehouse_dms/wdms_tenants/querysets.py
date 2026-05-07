@@ -50,9 +50,40 @@ def get_tenant_scoped_queryset(
 
 
 def get_regulator_queryset(user):
-    """Stub — Phase 4 will scope by jurisdiction/region.
-
-    For now return all active warehouses so regulators can at least
-    see data during development.
     """
-    return Warehouse.objects.filter(is_active=True)
+    Return a queryset of Warehouses visible to the given regulator user.
+
+    - Superusers see everything.
+    - Regulators with a NATIONAL jurisdiction see every active warehouse.
+    - Regulators with a REGIONAL jurisdiction see only warehouses in their
+      assigned region(s).
+    - Regulators with no jurisdiction record at all fall back to seeing all
+      active warehouses (graceful degradation during seeding/setup).
+
+    The import of RegulatorJurisdiction is deferred to avoid a circular
+    dependency between wdms_tenants and wdms_regulatory.
+    """
+    if getattr(user, "is_superuser", False):
+        return Warehouse.objects.filter(is_active=True)
+
+    # Deferred import avoids circular dependency
+    from wdms_regulatory.models import JurisdictionScope, RegulatorJurisdiction  # noqa: PLC0415
+
+    jurisdictions = RegulatorJurisdiction.objects.filter(
+        regulator=user, is_active=True
+    ).select_related("region")
+
+    if not jurisdictions.exists():
+        # No jurisdiction assigned yet — show everything (dev / setup mode)
+        return Warehouse.objects.filter(is_active=True)
+
+    # If any jurisdiction is NATIONAL, the regulator sees everything
+    if jurisdictions.filter(scope=JurisdictionScope.NATIONAL).exists():
+        return Warehouse.objects.filter(is_active=True)
+
+    # Otherwise collect region PKs and scope to those regions
+    region_pks = jurisdictions.filter(
+        scope=JurisdictionScope.REGIONAL
+    ).values_list("region_id", flat=True)
+
+    return Warehouse.objects.filter(region_id__in=region_pks, is_active=True)

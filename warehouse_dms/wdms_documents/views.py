@@ -92,7 +92,11 @@ from wdms_notifications.serializers import (
     UploadAttemptStartSerializer,
 )
 from wdms_tenants.models import Warehouse
-from wdms_tenants.querysets import get_tenant_scoped_queryset, get_user_tenant
+from wdms_tenants.querysets import (
+    get_regulator_queryset,
+    get_tenant_scoped_queryset,
+    get_user_tenant,
+)
 from wdms_uaa.authorization import PermissionAuth
 from wdms_uaa.models import UsersWithRoles
 from wdms_utils.response import (
@@ -139,7 +143,7 @@ def _scope_documents_for_user(request: HttpRequest) -> QuerySet:
       - DEPOSITOR          → only documents they uploaded
       - STAFF              → documents in their assigned warehouse
       - MANAGER / CEO      → documents across their tenant
-      - REGULATOR          → Phase 5 will scope by jurisdiction; Phase 2 returns none
+      - REGULATOR          → approved records in jurisdiction, plus own uploads
       - Anyone else / no tenant → empty queryset
 
     This is the single chokepoint for cross-tenant isolation on list + detail.
@@ -186,8 +190,15 @@ def _scope_documents_for_user(request: HttpRequest) -> QuerySet:
         return base.filter(warehouse__tenant=tenant)
 
     if role == "REGULATOR":
-        # Regulators see documents they uploaded (compliance reports, etc.)
-        return base.filter(uploader=user)
+        # Source-of-truth flow: once warehouse documents are approved they
+        # become visible to regulators for monitoring, audit, and compliance.
+        # Regulators also need to track compliance/ranking reports they upload
+        # before the warehouse acknowledges them.
+        scoped_warehouses = get_regulator_queryset(user)
+        return base.filter(
+            Q(uploader=user) |
+            Q(status="APPROVED", warehouse__in=scoped_warehouses)
+        )
 
     # Unknown role → empty queryset
     return base.none()
@@ -262,13 +273,25 @@ def upload_document(
             )
 
         if not request.user.is_superuser:
-            caller_tenant = get_user_tenant(request.user)
-            if caller_tenant is None or caller_tenant.pk != warehouse.tenant_id:
-                return UploadAttemptStartResponseSerializer(
-                    response=ResponseObject.get_response(
-                        0, "You do not belong to this warehouse's tenant"
+            user_role = _get_user_role(request.user)
+            if user_role == "REGULATOR":
+                in_jurisdiction = get_regulator_queryset(request.user).filter(
+                    pk=warehouse.pk
+                ).exists()
+                if not in_jurisdiction:
+                    return UploadAttemptStartResponseSerializer(
+                        response=ResponseObject.get_response(
+                            0, "Warehouse not in your jurisdiction"
+                        )
                     )
-                )
+            else:
+                caller_tenant = get_user_tenant(request.user)
+                if caller_tenant is None or caller_tenant.pk != warehouse.tenant_id:
+                    return UploadAttemptStartResponseSerializer(
+                        response=ResponseObject.get_response(
+                            0, "You do not belong to this warehouse's tenant"
+                        )
+                    )
 
         attempt = UploadAttempt.objects.create(
             uploader=request.user,
@@ -298,7 +321,6 @@ def upload_document(
         return UploadAttemptStartResponseSerializer(
             response=ResponseObject.get_response(2, str(e))
         )
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Upload Step 2 — SSE stream (plain Django view, wired in urls.py)
@@ -536,6 +558,22 @@ def form_fill(
             return DocumentNonPagedResponseSerializer(
                 response=ResponseObject.get_response(0, "Warehouse not found")
             )
+        if not request.user.is_superuser:
+            if role == "REGULATOR":
+                if not get_regulator_queryset(request.user).filter(pk=warehouse.pk).exists():
+                    return DocumentNonPagedResponseSerializer(
+                        response=ResponseObject.get_response(
+                            0, "Warehouse not in your jurisdiction"
+                        )
+                    )
+            else:
+                caller_tenant = get_user_tenant(request.user)
+                if caller_tenant is None or caller_tenant.pk != warehouse.tenant_id:
+                    return DocumentNonPagedResponseSerializer(
+                        response=ResponseObject.get_response(
+                            0, "You do not belong to this warehouse's tenant"
+                        )
+                    )
 
         with transaction.atomic():
             document = Document.objects.create(
@@ -1049,6 +1087,16 @@ def list_documents(
                 queryset = queryset.filter(uploader_id=filtering.uploader_id)
             if filtering.warehouse_id:
                 queryset = queryset.filter(warehouse_id=filtering.warehouse_id)
+            if filtering.search_term:
+                term = filtering.search_term.strip()
+                if term:
+                    queryset = queryset.filter(
+                        Q(title__icontains=term)
+                        | Q(extracted_text__icontains=term)
+                        | Q(ai_summary__icontains=term)
+                        | Q(ai_review_notes__icontains=term)
+                        | Q(warehouse__name__icontains=term)
+                    )
 
         return get_paginated_and_non_paginated_data(
             queryset, filtering, DocumentPagedResponseSerializer
@@ -1542,5 +1590,3 @@ def correct_ai_fields(
         return DocumentNonPagedResponseSerializer(
             response=ResponseObject.get_response(2, str(e))
         )
-
-
