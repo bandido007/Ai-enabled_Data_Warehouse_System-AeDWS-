@@ -61,6 +61,7 @@ const EMPTY_CREATE_FORM: CreateUserFormState = {
   roleName: 'DEPOSITOR',
   tenantUniqueId: '',
   warehouseUniqueId: '',
+  hasBeenVerified: true,
 }
 
 interface TenantRecord {
@@ -88,6 +89,7 @@ interface CreateUserFormState {
   roleName: UserRole
   tenantUniqueId: string
   warehouseUniqueId: string
+  hasBeenVerified: boolean
 }
 
 interface EditUserFormState extends CreateUserFormState {
@@ -296,6 +298,7 @@ export function UsersPage() {
         phoneNumber: payload.phoneNumber.trim(),
         accountType: payload.roleName,
         roleName: payload.roleName,
+        hasBeenVerified: payload.hasBeenVerified,
         tenantUniqueId,
         warehouseUniqueId: payload.warehouseUniqueId || undefined,
       })
@@ -390,6 +393,38 @@ export function UsersPage() {
       toast({
         title: 'Unable to reset password',
         description: getErrorMessage(error, 'Try a different temporary password.'),
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const verifyUserMutation = useMutation({
+    mutationFn: async (payload: UserProfile & Record<string, unknown>) => {
+      await putEnvelope(`/accounts/users/${payload.uniqueId}`, {
+        username: payload.username.trim(),
+        email: payload.email.trim(),
+        firstName: payload.firstName?.trim() ?? '',
+        lastName: payload.lastName?.trim() ?? '',
+        phoneNumber: payload.phoneNumber?.trim() ?? '',
+        accountType: getUserRole(payload),
+        roleName: getUserRole(payload),
+        hasBeenVerified: true,
+        tenantUniqueId: typeof payload.tenantUniqueId === 'string' ? payload.tenantUniqueId : undefined,
+        warehouseUniqueId: typeof payload.warehouseUniqueId === 'string' ? payload.warehouseUniqueId : undefined,
+      })
+    },
+    onSuccess: async () => {
+      toast({
+        title: 'User verified',
+        description: 'The account is now marked as verified.',
+      })
+      setEditForm((current) => (current ? { ...current, hasBeenVerified: true } : current))
+      await queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+    },
+    onError: (error) => {
+      toast({
+        title: 'Unable to verify user',
+        description: getErrorMessage(error, 'Try again in a moment.'),
         variant: 'destructive',
       })
     },
@@ -538,6 +573,10 @@ export function UsersPage() {
     await deactivateUserMutation.mutateAsync(editForm.uniqueId)
   }
 
+  async function handleVerifyUser(user: UserProfile & Record<string, unknown>) {
+    await verifyUserMutation.mutateAsync(user)
+  }
+
   return (
     <div className="flex flex-col gap-5 pb-6">
       <div className="flex shrink-0 items-start justify-between">
@@ -572,7 +611,7 @@ export function UsersPage() {
           <div
             className="grid px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest"
             style={{
-              gridTemplateColumns: '1.8fr 1.4fr 0.9fr 1.2fr 90px 120px',
+              gridTemplateColumns: '1.8fr 1.4fr 0.9fr 1.2fr 90px 180px',
               color: 'var(--text-tertiary)',
               borderBottom: '1px solid var(--admin-row-border)',
               background: 'var(--admin-panel-subtle-bg)',
@@ -588,7 +627,7 @@ export function UsersPage() {
 
           {isLoading
             ? Array.from({ length: 6 }).map((_, index) => (
-                <div key={index} className="grid items-center gap-4 px-4 py-3" style={{ gridTemplateColumns: '1.8fr 1.4fr 0.9fr 1.2fr 90px 120px', borderBottom: '1px solid var(--admin-row-border)' }}>
+                <div key={index} className="grid items-center gap-4 px-4 py-3" style={{ gridTemplateColumns: '1.8fr 1.4fr 0.9fr 1.2fr 90px 180px', borderBottom: '1px solid var(--admin-row-border)' }}>
                   <Skeleton className="h-4 w-36" />
                   <Skeleton className="h-4 w-40" />
                   <Skeleton className="h-5 w-20 rounded-full" />
@@ -610,7 +649,7 @@ export function UsersPage() {
                     key={user.id}
                     className="grid items-center px-4 py-2.5 text-sm transition-colors"
                     style={{
-                      gridTemplateColumns: '1.8fr 1.4fr 0.9fr 1.2fr 90px 120px',
+                      gridTemplateColumns: '1.8fr 1.4fr 0.9fr 1.2fr 90px 180px',
                       borderBottom: index < paged.length - 1 ? '1px solid var(--admin-row-border)' : 'none',
                       background: 'transparent',
                     }}
@@ -649,6 +688,11 @@ export function UsersPage() {
                       <Button size="sm" variant="secondary" onClick={() => openEditDialog(resolvedUser)}>
                         Edit
                       </Button>
+                      {!verifiedUser ? (
+                        <Button size="sm" onClick={() => handleVerifyUser(resolvedUser)} disabled={verifyUserMutation.isPending}>
+                          Verify
+                        </Button>
+                      ) : null}
                       <Button
                         size="sm"
                         variant="secondary"
@@ -776,6 +820,13 @@ export function UsersPage() {
                   </SelectContent>
                 </Select>
               </Field>
+
+              <Field label="Verified account" hint="Choose whether this new account is immediately trusted.">
+                <div className="flex h-9 items-center justify-between rounded-lg border px-3" style={{ borderColor: 'var(--admin-row-border)' }}>
+                  <span className="text-sm text-text-secondary">{createForm.hasBeenVerified ? 'Verified' : 'Pending verification'}</span>
+                  <Switch checked={createForm.hasBeenVerified} onCheckedChange={(checked) => updateCreateForm('hasBeenVerified', checked)} />
+                </div>
+              </Field>
             </div>
 
             <div className="space-y-4 rounded-xl border p-4" style={{ borderColor: 'var(--admin-panel-border)', background: 'var(--admin-panel-subtle-bg)' }}>
@@ -795,7 +846,7 @@ export function UsersPage() {
                     {warehouses.find((warehouse) => warehouse.uniqueId === createForm.warehouseUniqueId)?.name ?? 'Not assigned'}
                   </div>
                   <div>
-                    <span className="font-medium text-text-primary">Verification:</span> Created as verified by admin
+                    <span className="font-medium text-text-primary">Verification:</span> {createForm.hasBeenVerified ? 'Created as verified by admin' : 'Created as pending verification'}
                   </div>
                 </div>
               </div>
@@ -866,6 +917,20 @@ export function UsersPage() {
                     <span className="text-sm text-text-secondary">{editForm.hasBeenVerified ? 'Verified' : 'Pending verification'}</span>
                     <Switch checked={editForm.hasBeenVerified} onCheckedChange={(checked) => updateEditForm('hasBeenVerified', checked)} />
                   </div>
+                  {!editForm.hasBeenVerified ? (
+                    <Button
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => {
+                        const target = users.find((item) => item.uniqueId === editForm.uniqueId) as (UserProfile & Record<string, unknown>) | undefined
+                        if (target) void handleVerifyUser(target)
+                      }}
+                      disabled={verifyUserMutation.isPending}
+                    >
+                      {verifyUserMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                      Verify user
+                    </Button>
+                  ) : null}
                 </Field>
 
                 <Field label="Role">

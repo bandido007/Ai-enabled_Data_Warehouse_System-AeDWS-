@@ -72,7 +72,7 @@ function validateField(name: FieldName, value: string): string | null {
       if (!TZ_PHONE.test(value.trim())) return 'Enter a valid Tanzania number (+255… or 0…)'
       return null
     case 'authorizedSignatoryName':
-      if (!value.trim()) return 'Authorized signatory name is required'
+      if (!value.trim()) return null
       if (value.trim().length < 3) return 'Must be at least 3 characters'
       return null
     case 'cropType':
@@ -394,8 +394,12 @@ export function DepositorCorrectionPage() {
         {/* ── Section 2: Authorized signatory ── */}
         <div className="space-y-5 rounded-2xl border border-amber-100 bg-white px-6 py-6 shadow-sm">
           <SectionHeader number={2} en="Authorized Signatory" sw="Mwakilishi Aliyeidhinishwa" icon={<User className="h-4 w-4" />} />
-          <FormField label={<>Full Name of Authorized Signatory <span className="text-muted-foreground text-xs">(Jina Kamili)</span></>} required error={errors.authorizedSignatoryName}>
-            <Input value={authorizedSignatoryName} onChange={e => setAuthorizedSignatoryName(e.target.value)} onBlur={() => touch('authorizedSignatoryName')} className={inputCls('authorizedSignatoryName')} placeholder="As it appears on official documents" />
+          <FormField
+            label={<>Full Name of Authorized Signatory <span className="text-muted-foreground text-xs">(Jina Kamili)</span></>}
+            error={errors.authorizedSignatoryName}
+            hint="Optional if you are correcting this application personally."
+          >
+            <Input value={authorizedSignatoryName} onChange={e => setAuthorizedSignatoryName(e.target.value)} onBlur={() => touch('authorizedSignatoryName')} className={inputCls('authorizedSignatoryName')} placeholder="Optional authorized representative name" />
           </FormField>
         </div>
 

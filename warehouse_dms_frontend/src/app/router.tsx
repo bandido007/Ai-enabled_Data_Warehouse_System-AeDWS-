@@ -3,16 +3,21 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { RequireAuth } from '@/components/layout/require-auth'
 import { useAuth } from '@/hooks/use-auth'
 import { OperationalShell } from '@/layouts/operational-shell'
+import { ChangePasswordPage } from '@/pages/change-password-page'
 import { DashboardPage } from '@/pages/dashboard-page'
 import { DocumentReviewPage } from '@/pages/document-review-page'
 import { DocumentsPage } from '@/pages/documents-page'
 import { LoginPage } from '@/pages/login-page'
+import { ForgotPasswordPage } from '@/pages/forgot-password-page'
 import { NotFoundPage } from '@/pages/not-found-page'
 import { DepositorCorrectionPage } from '@/pages/depositor/depositor-correction-page'
 import { DepositorDocumentDetailPage } from '@/pages/depositor/depositor-document-detail-page'
 import { StaffPermissionFormPage } from '@/pages/staff-permission-form-page'
 import { ScanUploadPage } from '@/pages/scan-upload-page'
 import { StaffPermissionCorrectionPage } from '@/pages/staff-permission-correction-page'
+import { CeoIssuancesPage } from '@/pages/ceo-issuances-page'
+import { LeavePage } from '@/pages/leave/leave-page'
+import { LeaveManagementPage } from '@/pages/leave/leave-management-page'
 import { DepositorDocumentsPage } from '@/pages/depositor/depositor-documents-page'
 import { DepositorDownloadsPage } from '@/pages/depositor/depositor-downloads-page'
 import { DepositorHomePage } from '@/pages/depositor/depositor-home-page'
@@ -25,9 +30,11 @@ import { RegulatorDocumentViewPage } from '@/pages/regulator/regulator-document-
 import { RegulatorDocumentsPage } from '@/pages/regulator/regulator-documents-page'
 import { RegulatorInspectionsPage } from '@/pages/regulator/regulator-inspections-page'
 import { RegulatorWarehouseDetailPage } from '@/pages/regulator/regulator-warehouse-detail-page'
+import { RegulatorWarehouseCompliancePage } from '@/pages/regulator/regulator-warehouse-compliance-page'
 import { DocumentSearchPage } from '@/pages/search/document-search-page'
 import { NotificationPreferencesPage } from '@/pages/settings/notification-preferences-page'
 import { SettingsPage } from '@/pages/settings/settings-page'
+import { ChangePasswordSettingsPage } from '@/pages/settings/change-password-settings-page'
 import { UsersPage } from '@/pages/admin/users-page'
 import { WarehousesPage } from '@/pages/admin/warehouses-page'
 import { AuditLogPage } from '@/pages/admin/audit-log-page'
@@ -57,6 +64,8 @@ export function AppRouter() {
       <Routes>
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/change-password" element={<ChangePasswordPage />} />
 
         <Route element={<RequireAuth roles={['STAFF', 'MANAGER', 'CEO', 'ADMIN']} />}>
           <Route element={<OperationalShell />}>
@@ -68,7 +77,11 @@ export function AppRouter() {
             <Route path="/forms/staff-permission" element={<StaffPermissionFormPage />} />
             <Route path="/documents/upload" element={<ScanUploadPage />} />
             <Route path="/notifications" element={<PlaceholderPage title="Notifications" />} />
+            <Route path="/leave" element={<LeavePage />} />
+            <Route path="/leave/management" element={<LeaveManagementPage />} />
+            <Route path="/ceo/issuances" element={<CeoIssuancesPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings/change-password" element={<ChangePasswordSettingsPage />} />
             <Route path="/settings/notifications" element={<NotificationPreferencesPage />} />
             <Route path="/admin/users" element={<UsersPage />} />
             <Route path="/admin/tenants" element={<TenantsPage />} />
@@ -87,12 +100,16 @@ export function AppRouter() {
             <Route path="/depositor/documents/:id" element={<DepositorDocumentDetailPage />} />
             <Route path="/depositor/downloads" element={<DepositorDownloadsPage />} />
             <Route path="/depositor/forms/depositor-registration" element={<DepositorRegistrationFormPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings/change-password" element={<ChangePasswordSettingsPage />} />
+            <Route path="/settings/notifications" element={<NotificationPreferencesPage />} />
           </Route>
         </Route>
 
         <Route element={<RequireAuth roles={['REGULATOR', 'ADMIN']} />}>
           <Route element={<RegulatorShell />}>
             <Route path="/regulator" element={<RegulatorDashboardPage />} />
+            <Route path="/regulator/warehouses" element={<RegulatorWarehouseCompliancePage />} />
             <Route path="/regulator/search" element={<DocumentSearchPage regulator />} />
             <Route path="/regulator/warehouses/:id" element={<RegulatorWarehouseDetailPage />} />
             <Route path="/regulator/documents" element={<RegulatorDocumentsPage />} />
@@ -100,6 +117,8 @@ export function AppRouter() {
             <Route path="/regulator/notifications" element={<PlaceholderPage title="Notifications" />} />
             <Route path="/regulator/documents/:id" element={<RegulatorDocumentViewPage />} />
             <Route path="/regulator/upload" element={<ScanUploadPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings/change-password" element={<ChangePasswordSettingsPage />} />
             <Route path="/settings/notifications" element={<NotificationPreferencesPage />} />
           </Route>
         </Route>

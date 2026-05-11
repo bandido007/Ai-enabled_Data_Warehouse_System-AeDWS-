@@ -35,7 +35,10 @@
     "audit": "Audit log",
     "analytics": "Analytics",
     "workspace": "Workspace",
-    "account": "Account"
+    "account": "Account",
+    "leave": "Leave",
+    "leaveManagement": "Leave Management",
+    "ceoIssuances": "CEO Issuances"
   },
   "commandPalette": {
     "placeholder": "Search documents, warehouses, users...",
@@ -482,7 +485,7 @@
     "PENDING_MANAGER": "Pending manager",
     "PENDING_CEO": "Pending CEO",
     "APPROVED": "Approved",
-        "warehouse": "Warehouse",
+    "warehouse": "Warehouse",
     "REJECTED": "Rejected",
     "CORRECTION_NEEDED": "Correction needed"
   },
@@ -491,5 +494,18 @@
     "medium": "MED",
     "low": "LOW",
     "none": "—"
+  },
+  "leave": {
+    "title": "Leave Applications",
+    "subtitle": "View your leave balance and manage your time-off requests.",
+    "balance": "Leave Balance",
+    "annualDays": "Annual Days",
+    "daysUsed": "Days Used",
+    "daysRemaining": "Days Remaining",
+    "applyButton": "Apply for Leave",
+    "myApplications": "My Applications",
+    "management": "Leave Management",
+    "managementSubtitle": "Review and approve leave requests from your team.",
+    "emergencyWarning": "You have used all your annual leave days. Emergency applications can still be submitted."
   }
 }

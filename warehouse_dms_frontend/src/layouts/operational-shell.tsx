@@ -309,7 +309,7 @@ export function OperationalShell() {
                     style={{ color: 'var(--error)' }}
                   >
                     <LogOut className="h-3.5 w-3.5" />
-                    Sign out
+                    Log out
                   </DropdownMenuItem>
                 </div>
               </DropdownMenuContent>

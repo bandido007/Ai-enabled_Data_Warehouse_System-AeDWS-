@@ -72,7 +72,7 @@ function validateField(name: string, value: string): string | null {
       return null
 
     case 'authorizedSignatoryName':
-      if (!value.trim()) return 'Signatory name is required / Jina la msaini linahitajika'
+      if (!value.trim()) return null
       if (value.trim().length < 3) return 'Must be at least 3 characters / Angalau herufi 3'
       if (/\d/.test(value)) return 'Name should not contain numbers / Jina lisiwe na nambari'
       return null
@@ -272,8 +272,7 @@ export function DepositorRegistrationFormPage() {
   const isFormValid = !hasErrors && !warehouseError &&
     !!warehouseId && declarationAgreed &&
     businessName.trim() && physicalAddress.trim() && telephoneNumber.trim() &&
-    authorizedSignatoryName.trim() && cropType && storageQuantityKg.trim() &&
-    bankName.trim() && bankBranch.trim() && bankAccount.trim() &&
+    cropType && storageQuantityKg.trim() && bankName.trim() && bankBranch.trim() && bankAccount.trim() &&
     depositorFullName.trim() && depositorDate
 
   // ── Submission ───────────────────────────────────────────────────────────
@@ -521,13 +520,14 @@ export function DepositorRegistrationFormPage() {
               <div className="flex-1">
                 <FormField
                   label={<>Full Name of Authorized Signatory <span className="font-normal text-amber-700 italic text-xs">/ Jina Kamili la Afisa Mwenye Mamlaka ya Kuweka Sahihi</span></>}
-                  required error={errors.authorizedSignatoryName}
+                  error={errors.authorizedSignatoryName}
+                  hint="Optional if you are completing this application personally / Si lazima kama unajaza ombi hili mwenyewe"
                 >
                   <Input
                     value={authorizedSignatoryName}
                     onChange={e => setAuthorizedSignatoryName(e.target.value)}
                     onBlur={() => touch('authorizedSignatoryName')}
-                    placeholder="Full legal name (letters only)"
+                    placeholder="Optional authorized representative name"
                     className={inputCls('authorizedSignatoryName')}
                   />
                 </FormField>

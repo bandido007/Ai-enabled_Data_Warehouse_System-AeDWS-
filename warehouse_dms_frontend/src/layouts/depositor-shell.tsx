@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { Download, FileText, Globe, Home, LogOut, Search, Settings, TriangleAlert, Upload, User } from 'lucide-react'
+import { Download, FileText, Globe, LayoutDashboard, LogOut, Search, Settings, TriangleAlert, Upload, User } from 'lucide-react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
@@ -18,10 +18,10 @@ import { cn } from '@/lib/utils'
 
 /* ── Nav tab definitions ── */
 const NAV_TABS = [
-  { to: '/depositor',           label: 'Home',      icon: Home,     end: true  },
-  { to: '/depositor/documents', label: 'Documents', icon: FileText, end: false },
-  { to: '/depositor/downloads', label: 'Downloads', icon: Download, end: false },
-  { to: '/depositor/upload',    label: 'Upload',    icon: Upload,   end: false },
+  { to: '/depositor',           label: 'Dashboard', icon: LayoutDashboard, end: true  },
+  { to: '/depositor/documents', label: 'Documents', icon: FileText,        end: false },
+  { to: '/depositor/downloads', label: 'Downloads', icon: Download,        end: false },
+  { to: '/depositor/upload',    label: 'Upload',    icon: Upload,          end: false },
 ] as const
 
 export function DepositorShell() {
@@ -186,7 +186,7 @@ export function DepositorShell() {
                 </DropdownMenuItem>
               </div>
 
-              {/* Settings + Sign out */}
+              {/* Settings + logout */}
               <div className="px-2 py-2">
                 <DropdownMenuItem
                   onSelect={() => navigate('/depositor')}
@@ -202,7 +202,7 @@ export function DepositorShell() {
                   style={{ color: 'var(--error)' }}
                 >
                   <LogOut className="h-3.5 w-3.5" />
-                  Sign out
+                  Log out
                 </DropdownMenuItem>
               </div>
             </DropdownMenuContent>
@@ -281,5 +281,3 @@ export function DepositorShell() {
     </div>
   )
 }
-
-

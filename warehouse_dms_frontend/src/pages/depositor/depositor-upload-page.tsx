@@ -21,6 +21,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { api } from '@/lib/api'
+import {
+  ALL_DOCUMENT_CATEGORIES,
+  getDocumentTypeCategories,
+  getDocumentTypesForCategory,
+} from '@/lib/document-types'
 import { confirmUploadAttempt, startUploadAttempt, useDocumentTypesQuery, useWarehousesQuery } from '@/lib/queries'
 import { cn } from '@/lib/utils'
 import type { DocumentRecord, UploadCompleteEvent, UploadProgressEvent } from '@/types/api'
@@ -173,6 +178,7 @@ export function DepositorUploadPage() {
   const warehousesQuery    = useWarehousesQuery(true)
 
   const [selectedTypeId, setSelectedTypeId] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState(ALL_DOCUMENT_CATEGORIES)
   const [warehouseId,    setWarehouseId]    = useState('')
   const [title,          setTitle]          = useState('')
   const [selectedFile,   setSelectedFile]   = useState<File | null>(null)
@@ -190,6 +196,11 @@ export function DepositorUploadPage() {
   const availableTypes = useMemo(
     () => (documentTypesQuery.data ?? []).filter((item) => item.allowedUploaderRoles.includes('DEPOSITOR')),
     [documentTypesQuery.data]
+  )
+  const documentCategories = useMemo(() => getDocumentTypeCategories(availableTypes), [availableTypes])
+  const filteredTypes = useMemo(
+    () => getDocumentTypesForCategory(availableTypes, selectedCategory),
+    [availableTypes, selectedCategory]
   )
   const selectedType      = availableTypes.find((item) => item.id === selectedTypeId)
   const selectedWarehouse = (warehousesQuery.data ?? []).find((item) => String(item.id) === warehouseId)
@@ -276,7 +287,7 @@ export function DepositorUploadPage() {
       setConnectionMessage(t('depositorUpload.connecting'))
       setStreamEvents([])
       try {
-        await subscribeToStream(streamUrl, nextAttemptId)
+        await subscribeToStream(streamUrl)
       } catch (error) {
         const message = error instanceof Error ? error.message : t('depositorUpload.streamErrorBody')
         setValidationState('error')
@@ -305,6 +316,7 @@ export function DepositorUploadPage() {
   function resetAll() {
     resetFlow()
     setSelectedTypeId('')
+    setSelectedCategory(ALL_DOCUMENT_CATEGORIES)
     setWarehouseId('')
     setTitle('')
     setSelectedFile(null)
@@ -329,7 +341,7 @@ export function DepositorUploadPage() {
     if (idx > 0) setManualStep(order[idx - 1] as StepKey)
   }
 
-  async function subscribeToStream(streamPath: string, _nextAttemptId: number) {
+  async function subscribeToStream(streamPath: string) {
     if (!accessToken) throw new Error(t('depositorUpload.authRequired'))
     streamAbortRef.current?.abort()
     const controller = new AbortController()
@@ -418,12 +430,53 @@ export function DepositorUploadPage() {
               <h2 className="text-base font-semibold text-text-primary">Choose a Document Type</h2>
               <p className="mt-1 text-sm text-text-secondary">{t('depositorUpload.typeHelp')}</p>
             </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Document Category</Label>
+                <Select
+                  value={selectedCategory}
+                  onValueChange={(value) => {
+                    setSelectedCategory(value)
+                    setSelectedTypeId('')
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_DOCUMENT_CATEGORIES}>All categories</SelectItem>
+                    {documentCategories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Document Type</Label>
+                <Select value={selectedTypeId} onValueChange={setSelectedTypeId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select document type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="grid gap-3">
               {documentTypesQuery.isLoading
                 ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-2xl" />)
                 : availableTypes.length === 0
                 ? <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm text-text-secondary">No document types are available for upload.</div>
-                : availableTypes.map((type, index) => (
+                : filteredTypes.length === 0
+                ? <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm text-text-secondary">No document types are available under this category.</div>
+                : filteredTypes.map((type, index) => (
                   <button
                     key={type.id}
                     type="button"

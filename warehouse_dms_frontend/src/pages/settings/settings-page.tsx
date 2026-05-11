@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Bell, Users, Warehouse, Shield, ChevronRight, Building2 } from 'lucide-react'
+import { Bell, Users, Warehouse, Shield, ChevronRight, Building2, KeyRound } from 'lucide-react'
 
 import { PageHeader } from '@/components/common/page-header'
 import { Card, CardContent } from '@/components/ui/card'
@@ -12,6 +12,14 @@ const SETTING_GROUPS = [
     icon: Bell,
     to: '/settings/notifications',
     colour: 'bg-sky-500/10 text-sky-700',
+    roles: ['STAFF', 'MANAGER', 'CEO', 'ADMIN', 'DEPOSITOR', 'REGULATOR'],
+  },
+  {
+    title: 'Change Password',
+    description: 'Update the password for your signed-in account.',
+    icon: KeyRound,
+    to: '/settings/change-password',
+    colour: 'bg-violet-500/10 text-violet-700',
     roles: ['STAFF', 'MANAGER', 'CEO', 'ADMIN', 'DEPOSITOR', 'REGULATOR'],
   },
   {

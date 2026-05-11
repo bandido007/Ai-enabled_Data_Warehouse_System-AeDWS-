@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 import { AlertCircle, ArrowRight, BarChart3, Brain, FileCheck2, Lock, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 
 
@@ -307,9 +307,14 @@ export function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-[11px] font-semibold uppercase tracking-widest text-white/35">
-                {t('auth.password')}
-              </Label>
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="password" className="text-[11px] font-semibold uppercase tracking-widest text-white/35">
+                  {t('auth.password')}
+                </Label>
+                <Link to="/forgot-password" className="text-xs font-medium" style={{ color: '#63dcca' }}>
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 id="password" type="password" autoComplete="current-password" value={password}
                 onFocus={() => setFocused('p')} onBlur={() => setFocused(null)}

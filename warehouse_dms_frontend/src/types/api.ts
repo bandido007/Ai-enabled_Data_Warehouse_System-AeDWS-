@@ -174,6 +174,7 @@ export interface DocumentTypeMetadata {
   category: string
   initialState: string
   allowedUploaderRoles: UserRole[]
+  viewerRoles: UserRole[]
   allowedTransitions: DocumentTypeTransition[]
   requiredFields: string[]
   optionalFields: string[]
@@ -344,4 +345,45 @@ export interface DocumentStats {
   rejectedThisWeek: number
   avgApprovalHours: number | null
   recentActivity: RecentActivityApiItem[]
+}
+
+// ── Leave ──────────────────────────────────────────────────────────────────
+
+export interface LeaveBalance {
+  employeeId: number
+  employeeUsername: string
+  employeeFullName: string
+  year: number
+  annualDays: number
+  daysUsed: number
+  daysRemaining: number
+}
+
+export interface LeaveApplication {
+  id: number
+  uniqueId: string
+  createdDate: string
+  updatedDate: string
+  isActive: boolean
+  applicantId: number
+  applicantUsername: string
+  applicantFullName: string
+  leaveType: string
+  leaveTypeDisplay: string
+  startDate: string
+  endDate: string
+  daysRequested: number
+  reason: string
+  status: string
+  statusDisplay: string
+  isEmergency: boolean
+  annualDays: number
+  daysUsedBefore: number
+  daysRemainingBefore: number
+  managerReviewedByUsername?: string | null
+  managerReviewDate?: string | null
+  managerComment: string
+  ceoReviewedByUsername?: string | null
+  ceoReviewDate?: string | null
+  ceoComment: string
 }

@@ -35,7 +35,10 @@
     "audit": "Kumbukumbu za ukaguzi",
     "analytics": "Uchanganuzi",
     "workspace": "Eneo la kazi",
-    "account": "Akaunti"
+    "account": "Akaunti",
+    "leave": "Likizo",
+    "leaveManagement": "Usimamizi wa Likizo",
+    "ceoIssuances": "Matangazo ya Mkurugenzi"
   },
   "commandPalette": {
     "placeholder": "Tafuta nyaraka, maghala, watumiaji...",
@@ -490,5 +493,18 @@
     "medium": "MED",
     "low": "LOW",
     "none": "—"
+  },
+  "leave": {
+    "title": "Maombi ya Likizo",
+    "subtitle": "Angalia salio lako la likizo na usimamie maombi ya muda.",
+    "balance": "Salio la Likizo",
+    "annualDays": "Siku za Mwaka",
+    "daysUsed": "Siku Zilizotumika",
+    "daysRemaining": "Siku Zilizobaki",
+    "applyButton": "Omba Likizo",
+    "myApplications": "Maombi Yangu",
+    "management": "Usimamizi wa Likizo",
+    "managementSubtitle": "Kagua na idhinisha maombi ya likizo kutoka timu yako.",
+    "emergencyWarning": "Umekwisha tumia siku zote za likizo. Maombi ya dharura yanaweza bado kuwasilishwa."
   }
 }

@@ -21,6 +21,11 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useAuth } from '@/hooks/use-auth'
+import {
+  ALL_DOCUMENT_CATEGORIES,
+  getDocumentTypeCategories,
+  getDocumentTypesForCategory,
+} from '@/lib/document-types'
 import { formatShortDate } from '@/lib/utils'
 import { useDocumentsQuery, useDocumentTypesQuery, useWarehousesQuery } from '@/lib/queries'
 
@@ -30,6 +35,7 @@ export function DocumentsPage() {
   const { primaryRole } = useAuth()
   const [pageNumber, setPageNumber] = useState(1)
   const [status, setStatus] = useState('all')
+  const [documentCategory, setDocumentCategory] = useState(ALL_DOCUMENT_CATEGORIES)
   const [documentTypeId, setDocumentTypeId] = useState('all')
   const [warehouseId, setWarehouseId] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
@@ -41,13 +47,14 @@ export function DocumentsPage() {
       itemsPerPage: 20,
       pageNumber,
       status: status !== 'all' ? status : undefined,
+      documentCategory: documentCategory !== ALL_DOCUMENT_CATEGORIES ? documentCategory : undefined,
       documentTypeId: documentTypeId !== 'all' ? documentTypeId : undefined,
       warehouseId: warehouseId !== 'all' ? Number(warehouseId) : undefined,
       searchTerm: searchTerm || undefined,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
     }),
-    [documentTypeId, endDate, pageNumber, searchTerm, startDate, status, warehouseId]
+    [documentCategory, documentTypeId, endDate, pageNumber, searchTerm, startDate, status, warehouseId]
   )
 
   const documentsQuery = useDocumentsQuery(params, true)
@@ -64,8 +71,13 @@ export function DocumentsPage() {
 
   const documents = documentsQuery.data?.data ?? []
   const page = documentsQuery.data?.page
-  const documentTypes = documentTypesQuery.data ?? []
+  const documentTypes = useMemo(() => documentTypesQuery.data ?? [], [documentTypesQuery.data])
   const warehouses = warehousesQuery.data ?? []
+  const documentCategories = useMemo(() => getDocumentTypeCategories(documentTypes), [documentTypes])
+  const filteredDocumentTypes = useMemo(
+    () => getDocumentTypesForCategory(documentTypes, documentCategory),
+    [documentCategory, documentTypes]
+  )
 
   return (
     <div className="space-y-6">
@@ -94,7 +106,7 @@ export function DocumentsPage() {
       )}
 
       <Card>
-        <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-6">
+        <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-7">
           <Input
             value={searchTerm}
             onChange={(event) => {
@@ -115,13 +127,33 @@ export function DocumentsPage() {
               <SelectValue placeholder={t('documents.filters.status')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t('documents.filters.all')}</SelectItem>
+              <SelectItem value="all">All statuses</SelectItem>
               <SelectItem value="PENDING_STAFF">{t('status.PENDING_STAFF')}</SelectItem>
               <SelectItem value="PENDING_MANAGER">{t('status.PENDING_MANAGER')}</SelectItem>
               <SelectItem value="PENDING_CEO">{t('status.PENDING_CEO')}</SelectItem>
               <SelectItem value="APPROVED">{t('status.APPROVED')}</SelectItem>
               <SelectItem value="REJECTED">{t('status.REJECTED')}</SelectItem>
               <SelectItem value="CORRECTION_NEEDED">{t('status.CORRECTION_NEEDED')}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={documentCategory}
+            onValueChange={(value) => {
+              setPageNumber(1)
+              setDocumentCategory(value)
+              setDocumentTypeId('all')
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Document category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_DOCUMENT_CATEGORIES}>All document categories</SelectItem>
+              {documentCategories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select
@@ -135,8 +167,10 @@ export function DocumentsPage() {
               <SelectValue placeholder={t('documents.filters.type')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t('documents.filters.all')}</SelectItem>
-              {documentTypes.map((type) => (
+              <SelectItem value="all">
+                {documentCategory === ALL_DOCUMENT_CATEGORIES ? 'All document types' : `All ${documentCategory} types`}
+              </SelectItem>
+              {filteredDocumentTypes.map((type) => (
                 <SelectItem key={type.id} value={type.id}>
                   {type.label}
                 </SelectItem>
@@ -155,7 +189,7 @@ export function DocumentsPage() {
                 <SelectValue placeholder={t('documents.filters.warehouse')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t('documents.filters.all')}</SelectItem>
+                <SelectItem value="all">All warehouses</SelectItem>
                 {warehouses.map((warehouse) => (
                   <SelectItem key={warehouse.id} value={String(warehouse.id)}>
                     {warehouse.name}
@@ -164,8 +198,28 @@ export function DocumentsPage() {
               </SelectContent>
             </Select>
           ) : null}
-          <Input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
-          <Input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
+          <label className="space-y-1 text-xs font-medium text-text-secondary">
+            <span>From date</span>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(event) => {
+                setPageNumber(1)
+                setStartDate(event.target.value)
+              }}
+            />
+          </label>
+          <label className="space-y-1 text-xs font-medium text-text-secondary">
+            <span>To date</span>
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(event) => {
+                setPageNumber(1)
+                setEndDate(event.target.value)
+              }}
+            />
+          </label>
         </CardContent>
       </Card>
 
@@ -173,7 +227,9 @@ export function DocumentsPage() {
         <CardHeader className="flex flex-row items-center justify-between border-b border-border px-5 py-4">
           <CardTitle>{t('documents.table.title')}</CardTitle>
           <div className="flex gap-2">
-            <Button variant="ghost" size="sm">{t('documents.actions.filter')}</Button>
+            <Button variant="ghost" size="sm" onClick={() => documentsQuery.refetch()}>
+              {t('documents.actions.filter')}
+            </Button>
             <Button variant="secondary" size="sm">{t('documents.actions.export')}</Button>
           </div>
         </CardHeader>

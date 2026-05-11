@@ -6,6 +6,8 @@ import type {
   AvailableTransition,
   DocumentRecord,
   DocumentTypeMetadata,
+  LeaveApplication,
+  LeaveBalance,
   LoginResponse,
   NotificationEvent,
   PreferenceItem,
@@ -138,6 +140,18 @@ export async function loginRequest(payload: { username: string; password: string
   const { data } = await api.post<LoginResponse>('/auth/login', payload)
   if (!data?.access) throw new Error('Invalid credentials')
   return data
+}
+
+export async function forgotPassword(email: string) {
+  return postEnvelope('/accounts/forgot-password', { email })
+}
+
+export async function resetPassword(payload: { token: string; newPassword: string }) {
+  return postEnvelope('/accounts/change-password', payload)
+}
+
+export async function changeOwnPassword(payload: { currentPassword: string; newPassword: string }) {
+  return postEnvelope('/accounts/me/change-password', payload)
 }
 
 export async function markNotificationRead(notificationId: number) {
@@ -374,5 +388,66 @@ export function useAnalyticsAggregatesQuery(warehouseId?: string | number, enabl
     },
     enabled,
     staleTime: 2 * 60 * 1000, // 2 min
+  })
+}
+
+// ── Leave ─────────────────────────────────────────────────────────────────────
+
+export function useLeaveBalanceQuery(enabled = true) {
+  return useQuery({
+    queryKey: ['leave-balance'],
+    queryFn: () => getItem<LeaveBalance>('/leave/balance/'),
+    enabled,
+    staleTime: 30_000,
+  })
+}
+
+export function useLeaveApplicationsQuery(
+  params: Record<string, unknown> = {},
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ['leave-applications', params],
+    queryFn: () => getList<LeaveApplication>('/leave/applications/', params),
+    enabled,
+  })
+}
+
+export function useSubmitLeaveApplicationMutation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: {
+      leaveType: string
+      startDate: string
+      endDate: string
+      reason: string
+    }) => postItem<LeaveApplication>('/leave/applications/', body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['leave-applications'] })
+      qc.invalidateQueries({ queryKey: ['leave-balance'] })
+    },
+  })
+}
+
+export function useLeaveTransitionMutation(applicationId: number | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: { action: string; comment: string }) =>
+      postItem<LeaveApplication>(`/leave/applications/${applicationId}/transition/`, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['leave-applications'] })
+      qc.invalidateQueries({ queryKey: ['leave-balance'] })
+    },
+  })
+}
+
+export function useCancelLeaveApplicationMutation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.delete(`/leave/applications/${id}/`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['leave-applications'] })
+      qc.invalidateQueries({ queryKey: ['leave-balance'] })
+    },
   })
 }

@@ -8,11 +8,13 @@
  * Same amber color palette and bilingual labelling as the depositor form.
  */
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import {
   AlertCircle,
+  AlertTriangle,
   ArrowLeft,
+  CalendarDays,
   CheckCircle2,
   ClipboardCheck,
   ClipboardList,
@@ -22,7 +24,7 @@ import {
   User,
   Wheat,
 } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Button }   from '@/components/ui/button'
 import { Input }    from '@/components/ui/input'
@@ -37,7 +39,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth }  from '@/hooks/use-auth'
-import { submitFormFill, useWarehousesQuery, validateFormDraft } from '@/lib/queries'
+import { submitFormFill, useWarehousesQuery, validateFormDraft, useLeaveBalanceQuery } from '@/lib/queries'
 import type { FormValidationResult } from '@/lib/queries'
 import { FormValidationModal } from '@/components/form-validation-modal'
 
@@ -213,7 +215,12 @@ function LockedInput({ placeholder }: { placeholder: string }) {
 }
 
 // ── Success screen ─────────────────────────────────────────────────────────────
-function SuccessScreen({ documentId, isManager }: { documentId?: number; isManager: boolean }) {
+function SuccessScreen({ documentId, isManager, isCEO }: { documentId?: number; isManager: boolean; isCEO: boolean }) {
+  const nextStep = isCEO
+    ? 'Your request has been submitted for administrative review.'
+    : isManager
+    ? 'Your request is now with the CEO for final authorization.'
+    : 'Your request is now with the Manager for review. You will be notified once a decision is made.'
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 py-16 text-center">
       <div className="rounded-full bg-emerald-100 p-5">
@@ -223,11 +230,7 @@ function SuccessScreen({ documentId, isManager }: { documentId?: number; isManag
         <h2 className="text-xl font-bold text-gray-900">Permission request submitted!</h2>
         <p className="text-sm italic text-amber-700">Ombi la ruhusa limetumwa!</p>
       </div>
-      <p className="max-w-sm text-sm text-gray-500">
-        {isManager
-          ? 'Your request is now with the CEO for final authorization.'
-          : 'Your request is now with the Manager for review. You will be notified once a decision is made.'}
-      </p>
+      <p className="max-w-sm text-sm text-gray-500">{nextStep}</p>
       <div className="flex gap-3">
         {documentId && (
           <Button asChild variant="secondary">
@@ -243,15 +246,34 @@ function SuccessScreen({ documentId, isManager }: { documentId?: number; isManag
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
+/** Count Mon–Sat working days between two ISO date strings (inclusive). */
+function calcWorkingDays(from: string, to: string): number | null {
+  if (!from || !to) return null
+  const s = new Date(from)
+  const e = new Date(to)
+  if (e < s) return null
+  let count = 0
+  const cur = new Date(s)
+  while (cur <= e) {
+    if (cur.getDay() !== 0) count++ // skip Sundays only
+    cur.setDate(cur.getDate() + 1)
+  }
+  return count
+}
+
 export function StaffPermissionFormPage() {
   const navigate  = useNavigate()
   const { toast } = useToast()
   const { primaryRole } = useAuth()
+  const [searchParams] = useSearchParams()
   const isManager = primaryRole === 'MANAGER'
+  const isCEO     = primaryRole === 'CEO'
   const submitAttempted = useRef(false)
 
   // Which document type to use
-  const docTypeId = isManager ? 'manager_permission' : 'staff_permission'
+  // STAFF → staff_permission (Manager→CEO chain)
+  // MANAGER or CEO → manager_permission (goes straight to CEO / admin)
+  const docTypeId = (isManager || isCEO) ? 'manager_permission' : 'staff_permission'
 
   // Warehouse selector (optional — staff picks the warehouse this relates to)
   const warehousesQuery = useWarehousesQuery(true)
@@ -279,7 +301,7 @@ export function StaffPermissionFormPage() {
   const [isFirstAnnualLeave,      setIsFirstAnnualLeave]      = useState(false)
   const [dateOfFirstAppointment,  setDateOfFirstAppointment]  = useState('')
   const [leaveDaysRequested,      setLeaveDaysRequested]      = useState('')
-  const [daysAccumulatedFromPrev, setDaysAccumulatedFromPrev] = useState('')
+  // daysAccumulatedFromPrev is derived from the API balance below — no manual state needed
   const [addressDuringLeave,      setAddressDuringLeave]      = useState('')
   const [poBoxDuringLeave,        setPoBoxDuringLeave]        = useState('')
   const [phoneDuringLeave,        setPhoneDuringLeave]        = useState('')
@@ -295,6 +317,37 @@ export function StaffPermissionFormPage() {
 
   // ── Validation ────────────────────────────────────────────────────────────
   const isLeavePermission = LEAVE_PERMISSION_VALUES.includes(permissionType)
+
+  // ── Pre-select leave type from URL param (?leaveType=annual|emergency) ────
+  useEffect(() => {
+    const param = searchParams.get('leaveType')
+    if (!param) return
+    if (param === 'emergency') {
+      setPermissionType('Emergency Leave / Likizo ya Dharura')
+    } else {
+      setPermissionType('Annual Leave / Likizo ya Kila Mwaka')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── Live leave balance (fetched only when a leave type is selected) ────────
+  const leaveBalanceQuery = useLeaveBalanceQuery(isLeavePermission)
+  const leaveBalance = leaveBalanceQuery.data
+  // Days accumulated from previous period = remaining from current balance snapshot
+  const daysAccumulatedFromPrev = leaveBalance ? String(leaveBalance.daysRemaining) : ''
+
+  // ── Auto-calculate working days (Mon–Sat) from date range ─────────────────
+  const estimatedDays = calcWorkingDays(dateFrom, dateTo)
+
+  // Keep leaveDaysRequested in sync with estimated days
+  useEffect(() => {
+    if (isLeavePermission && estimatedDays !== null) {
+      setLeaveDaysRequested(String(estimatedDays))
+    }
+  }, [isLeavePermission, estimatedDays])
+
+  const overBalance =
+    leaveBalance && estimatedDays !== null && estimatedDays > leaveBalance.daysRemaining
 
   const currentValues: Record<FieldName, string> = {
     employeeFullName, employeeId, department, designation,
@@ -414,15 +467,19 @@ export function StaffPermissionFormPage() {
 
   // ── Success screen ────────────────────────────────────────────────────────
   if (submitted) {
-    return <SuccessScreen documentId={submittedId} isManager={isManager} />
+    return <SuccessScreen documentId={submittedId} isManager={isManager} isCEO={isCEO} />
   }
 
-  const formTitle   = isManager ? 'Manager Permission Request Form' : 'Staff Permission Request Form'
-  const formTitleSw = isManager ? 'Fomu ya Ombi la Ruhusa ya Meneja' : 'Fomu ya Ombi la Ruhusa ya Mfanyakazi'
-  const formNumber  = isManager ? 'MP-1' : 'SP-1'
-  const routeBadge  = isManager
-    ? 'Submitted → CEO for authorization'
-    : 'Submitted → Manager → CEO for authorization'
+  const formTitle   = isCEO    ? 'CEO Permission Request Form'
+                    : isManager ? 'Manager Permission Request Form'
+                    : 'Staff Permission Request Form'
+  const formTitleSw = isCEO    ? 'Fomu ya Ombi la Ruhusa ya Mkurugenzi Mkuu'
+                    : isManager ? 'Fomu ya Ombi la Ruhusa ya Meneja'
+                    : 'Fomu ya Ombi la Ruhusa ya Mfanyakazi'
+  const formNumber  = isCEO ? 'CP-1' : isManager ? 'MP-1' : 'SP-1'
+  const routeBadge  = isCEO    ? 'Submitted → Admin for authorization'
+                    : isManager ? 'Submitted → CEO for authorization'
+                    : 'Submitted → Manager → CEO for authorization'
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
@@ -531,43 +588,110 @@ export function StaffPermissionFormPage() {
               icon={<ClipboardList className="h-4 w-4" />}
             />
             <p className="-mt-2 text-xs text-amber-700 italic">
-              Required for leave requests — complete all fields below /
-              Inahitajika kwa maombi ya likizo — jaza sehemu zote hapa chini
+              Leave balance details are calculated automatically — no manual entry required /
+              Maelezo ya salio la likizo yanakokotolewa kiotomatiki — hakuna uingizaji wa mikono unaohitajika
             </p>
 
-            {/* Date of last leave + accumulated days */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField label={<>Date of Last Leave <span className="text-muted-foreground text-xs">(Tarehe ya Likizo Iliyopita)</span></>}>
-                <Input
-                  value={dateOfLastLeave}
-                  onChange={e => setDateOfLastLeave(e.target.value)}
-                  className="border-gray-300 focus:border-amber-400 focus:ring-amber-300"
-                  type="date"
-                />
-              </FormField>
-              <FormField label={<>Days Accumulated from Previous Leave <span className="text-muted-foreground text-xs">(Siku Zilizobaki)</span></>}>
-                <Input
-                  value={daysAccumulatedFromPrev}
-                  onChange={e => setDaysAccumulatedFromPrev(e.target.value)}
-                  className="border-gray-300 focus:border-amber-400 focus:ring-amber-300"
-                  type="number" min="0" placeholder="e.g. 5"
-                />
-              </FormField>
+            {/* ── Auto-calculated balance strip ─────────────────────────── */}
+            <div className="rounded-xl border-2 border-amber-200 bg-white p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-bold text-amber-800">
+                <CalendarDays className="h-4 w-4" />
+                Leave Balance — {leaveBalance?.year ?? new Date().getFullYear()}
+                <span className="ml-auto text-[10px] font-normal text-amber-600 uppercase tracking-wide">
+                  Auto-calculated / Inakokotolewa kiotomatiki
+                </span>
+              </div>
+
+              {leaveBalanceQuery.isLoading ? (
+                <div className="grid grid-cols-3 gap-2 animate-pulse">
+                  {[0,1,2].map(i => <div key={i} className="h-14 rounded-lg bg-amber-100" />)}
+                </div>
+              ) : leaveBalance ? (
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-lg bg-amber-50 border border-amber-200 p-2 text-center">
+                      <div className="text-xl font-black text-amber-700">{leaveBalance.annualDays}</div>
+                      <div className="text-[10px] uppercase tracking-wide text-amber-600 mt-0.5">Annual Days<br/><span className="italic">Siku za Mwaka</span></div>
+                    </div>
+                    <div className="rounded-lg bg-orange-50 border border-orange-200 p-2 text-center">
+                      <div className="text-xl font-black text-orange-600">{leaveBalance.daysUsed}</div>
+                      <div className="text-[10px] uppercase tracking-wide text-orange-500 mt-0.5">Days Used<br/><span className="italic">Zilizotumika</span></div>
+                    </div>
+                    <div className="rounded-lg border p-2 text-center" style={{ background: leaveBalance.daysRemaining === 0 ? '#fef2f2' : '#f0fdf4', borderColor: leaveBalance.daysRemaining === 0 ? '#fca5a5' : '#86efac' }}>
+                      <div className={`text-xl font-black ${leaveBalance.daysRemaining === 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {leaveBalance.daysRemaining}
+                      </div>
+                      <div className={`text-[10px] uppercase tracking-wide mt-0.5 ${leaveBalance.daysRemaining === 0 ? 'text-red-500' : 'text-green-600'}`}>
+                        Remaining<br/><span className="italic">Zilizobaki</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  {leaveBalance.annualDays > 0 && (
+                    <div>
+                      <div className="flex justify-between text-[10px] text-amber-700 mb-1">
+                        <span>Used {Math.round((leaveBalance.daysUsed / leaveBalance.annualDays) * 100)}%</span>
+                        <span>{leaveBalance.daysUsed} / {leaveBalance.annualDays} days</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-amber-100 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            leaveBalance.daysUsed >= leaveBalance.annualDays
+                              ? 'bg-red-500' : leaveBalance.daysUsed / leaveBalance.annualDays >= 0.75
+                              ? 'bg-yellow-500' : 'bg-green-500'
+                          }`}
+                          style={{ width: `${Math.min((leaveBalance.daysUsed / leaveBalance.annualDays) * 100, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : null}
+
+              {/* Days being applied for — auto-calculated from date range */}
+              {estimatedDays !== null && (
+                <div className={`rounded-lg border px-3 py-2.5 text-sm ${
+                  overBalance
+                    ? 'border-red-200 bg-red-50 text-red-800'
+                    : 'border-green-200 bg-green-50 text-green-800'
+                }`}>
+                  {overBalance ? (
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold">
+                          Emergency request: {estimatedDays} working days requested — exceeds your remaining balance of{' '}
+                          {leaveBalance?.daysRemaining} day{leaveBalance?.daysRemaining !== 1 ? 's' : ''}.
+                        </p>
+                        <p className="text-xs mt-0.5 italic">
+                          Ombi la dharura: Siku {estimatedDays} zilizoombwa zinazidi salio lako la siku {leaveBalance?.daysRemaining}.
+                        </p>
+                        <p className="text-xs mt-1 font-medium">
+                          Your manager will review the reason you provide below before deciding.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4 shrink-0" />
+                      <span>
+                        <strong>{estimatedDays} working days</strong> (Mon–Sat) will be deducted from your balance.{' '}
+                        <span className="text-[11px] italic">Siku {estimatedDays} za kazi (Jumatatu–Jumamosi) zitakatwa.</span>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Days requested */}
-            <FormField
-              label={<>Number of Leave Days Applied For <span className="text-muted-foreground text-xs">(Idadi ya Siku za Likizo)</span></>}
-              required
-              error={errors.leaveDaysRequested}
-              hint={'"I wish to apply for X days starting from the start date above"'}
-            >
+            {/* Date of last leave (optional context) */}
+            <FormField label={<>Date of Last Leave <span className="text-muted-foreground text-xs">(Tarehe ya Likizo Iliyopita — optional)</span></>}>
               <Input
-                value={leaveDaysRequested}
-                onChange={e => { setLeaveDaysRequested(e.target.value); touch('leaveDaysRequested') }}
-                onBlur={() => touch('leaveDaysRequested')}
-                className={inputCls('leaveDaysRequested')}
-                type="number" min="1" placeholder="e.g. 14"
+                value={dateOfLastLeave}
+                onChange={e => setDateOfLastLeave(e.target.value)}
+                className="border-gray-300 focus:border-amber-400 focus:ring-amber-300"
+                type="date"
               />
             </FormField>
 
@@ -713,17 +837,19 @@ export function StaffPermissionFormPage() {
         <div className="space-y-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-6">
           <SectionHeader
             number={6}
-            en={isManager ? 'CEO Authorization Section' : 'Manager & CEO Authorization Section'}
-            sw={isManager ? 'Sehemu ya Idhini ya Mkurugenzi' : 'Sehemu ya Idhini ya Meneja na Mkurugenzi'}
+            en={isCEO ? 'Admin Authorization Section' : isManager ? 'CEO Authorization Section' : 'Manager & CEO Authorization Section'}
+            sw={isCEO ? 'Sehemu ya Idhini ya Utawala' : isManager ? 'Sehemu ya Idhini ya Mkurugenzi' : 'Sehemu ya Idhini ya Meneja na Mkurugenzi'}
             locked
           />
           <p className="text-xs text-slate-500">
-            {isManager
+            {isCEO
+              ? 'This section will be completed by the administrator during review.'
+              : isManager
               ? 'This section will be completed by the CEO during review.'
               : 'These sections will be completed by the Manager and CEO during review.'}
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
-            {!isManager && (
+            {!isManager && !isCEO && (
               <>
                 <FormField label="Manager Decision">
                   <LockedInput placeholder="Manager fills on review" />
@@ -733,12 +859,26 @@ export function StaffPermissionFormPage() {
                 </FormField>
               </>
             )}
-            <FormField label="CEO Decision">
-              <LockedInput placeholder="CEO fills on review" />
-            </FormField>
-            <FormField label="CEO Comments">
-              <LockedInput placeholder="CEO fills on review" />
-            </FormField>
+            {!isCEO && (
+              <>
+                <FormField label="CEO Decision">
+                  <LockedInput placeholder="CEO fills on review" />
+                </FormField>
+                <FormField label="CEO Comments">
+                  <LockedInput placeholder="CEO fills on review" />
+                </FormField>
+              </>
+            )}
+            {isCEO && (
+              <>
+                <FormField label="Admin Decision">
+                  <LockedInput placeholder="Admin fills on review" />
+                </FormField>
+                <FormField label="Admin Comments">
+                  <LockedInput placeholder="Admin fills on review" />
+                </FormField>
+              </>
+            )}
           </div>
         </div>
 

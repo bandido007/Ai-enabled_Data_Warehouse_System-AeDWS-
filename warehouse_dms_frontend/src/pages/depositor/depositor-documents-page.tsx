@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AlertTriangle, ArrowUpDown, FileText, Search, Upload } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 import { DepositorDocumentCard } from '@/components/depositor/document-card'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useDocumentsQuery } from '@/lib/queries'
 import { cn } from '@/lib/utils'
@@ -14,7 +16,7 @@ type FilterKey = 'all' | 'pending' | 'correction' | 'approved'
 type SortKey = 'newest' | 'oldest' | 'title' | 'status'
 
 const FILTERS: { key: FilterKey; label: string; match: (d: DocumentRecord) => boolean }[] = [
-  { key: 'all', label: 'All', match: () => true },
+  { key: 'all', label: 'All documents', match: () => true },
   { key: 'pending', label: 'In review', match: (d) => ['PENDING_STAFF', 'PENDING_MANAGER', 'PENDING_CEO'].includes(d.status) },
   { key: 'correction', label: 'Correction', match: (d) => d.status === 'CORRECTION_NEEDED' },
   { key: 'approved', label: 'Approved', match: (d) => d.status === 'APPROVED' },
@@ -32,35 +34,44 @@ function sortDocuments(documents: DocumentRecord[], sortKey: SortKey) {
 export function DepositorDocumentsPage() {
   const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
-  const documentsQuery = useDocumentsQuery({ itemsPerPage: 50 }, true)
-  const allDocs = documentsQuery.data?.data ?? []
   const urlFilter = (searchParams.get('filter') as FilterKey) || 'all'
   const urlQuery = searchParams.get('q') ?? ''
   const urlSort = (searchParams.get('sort') as SortKey) || 'newest'
+  const urlStartDate = searchParams.get('startDate') ?? ''
+  const urlEndDate = searchParams.get('endDate') ?? ''
+  const [pageNumber, setPageNumber] = useState(1)
   const [draftSearch, setDraftSearch] = useState(urlQuery)
-
-  useEffect(() => {
-    setDraftSearch(urlQuery)
-  }, [urlQuery])
+  const statusParam =
+    urlFilter === 'correction' ? 'CORRECTION_NEEDED' : urlFilter === 'approved' ? 'APPROVED' : undefined
+  const statusGroup = urlFilter === 'pending' ? 'PENDING_REVIEW' : undefined
+  const documentsQuery = useDocumentsQuery(
+    {
+      itemsPerPage: 10,
+      pageNumber,
+      status: statusParam,
+      statusGroup,
+      searchTerm: urlQuery || undefined,
+      startDate: urlStartDate || undefined,
+      endDate: urlEndDate || undefined,
+    },
+    true
+  )
+  const allDocs = useMemo(() => documentsQuery.data?.data ?? [], [documentsQuery.data])
+  const page = documentsQuery.data?.page
 
   const filtered = useMemo(() => {
-    const matcher = FILTERS.find((f) => f.key === urlFilter)?.match ?? FILTERS[0].match
-    const searched = allDocs.filter((doc) => {
-      const q = urlQuery.trim().toLowerCase()
-      if (!q) return true
-      return [doc.title, doc.documentTypeId, doc.warehouseName, doc.status].join(' ').toLowerCase().includes(q)
-    })
-    return sortDocuments(searched.filter(matcher), urlSort)
-  }, [allDocs, urlFilter, urlQuery, urlSort])
+    return sortDocuments(allDocs, urlSort)
+  }, [allDocs, urlSort])
 
   const correctionDocs = filtered.filter((doc) => doc.status === 'CORRECTION_NEEDED')
 
-  function updateParams(next: Partial<Record<'filter' | 'q' | 'sort', string>>) {
+  function updateParams(next: Partial<Record<'filter' | 'q' | 'sort' | 'startDate' | 'endDate', string>>) {
     const params = new URLSearchParams(searchParams)
     Object.entries(next).forEach(([key, value]) => {
       if (!value || value === 'all' || (key === 'sort' && value === 'newest')) params.delete(key)
       else params.set(key, value)
     })
+    setPageNumber(1)
     setSearchParams(params)
   }
 
@@ -79,6 +90,29 @@ export function DepositorDocumentsPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
           <Input value={draftSearch} onChange={(event) => setDraftSearch(event.target.value)} className="pl-10" placeholder="Search by title, type, warehouse, or status" />
         </form>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Select value={urlFilter} onValueChange={(value) => updateParams({ filter: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Document status" />
+            </SelectTrigger>
+            <SelectContent>
+              {FILTERS.map((filter) => (
+                <SelectItem key={filter.key} value={filter.key}>
+                  {filter.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <label className="space-y-1 text-xs font-medium text-text-secondary">
+            <span>From date</span>
+            <Input type="date" value={urlStartDate} onChange={(event) => updateParams({ startDate: event.target.value })} />
+          </label>
+          <label className="space-y-1 text-xs font-medium text-text-secondary">
+            <span>To date</span>
+            <Input type="date" value={urlEndDate} onChange={(event) => updateParams({ endDate: event.target.value })} />
+          </label>
+        </div>
 
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin">
           {FILTERS.map((f) => {
@@ -101,7 +135,7 @@ export function DepositorDocumentsPage() {
 
         <div className="flex items-center justify-between gap-3">
           <div className="text-xs text-text-tertiary">
-            Showing <span className="font-semibold text-text-primary">{filtered.length}</span> result{filtered.length === 1 ? '' : 's'}
+            Showing <span className="font-semibold text-text-primary">{page?.totalElements ?? filtered.length}</span> result{(page?.totalElements ?? filtered.length) === 1 ? '' : 's'}
           </div>
           <label className="flex items-center gap-2 text-xs text-text-tertiary">
             <ArrowUpDown className="h-3.5 w-3.5" />
@@ -149,7 +183,20 @@ export function DepositorDocumentsPage() {
             </Link>
           </div>
         ) : (
-          filtered.map((document) => <DepositorDocumentCard key={document.id} document={document} />)
+          <>
+            {filtered.map((document) => <DepositorDocumentCard key={document.id} document={document} />)}
+            <div className="flex items-center justify-between rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-text-secondary">
+              <Button variant="ghost" size="sm" disabled={!page?.hasPreviousPage} onClick={() => setPageNumber((current) => Math.max(1, current - 1))}>
+                Previous
+              </Button>
+              <span>
+                Page {page?.currentPageNumber ?? 1} of {page?.numberOfPages ?? 1}
+              </span>
+              <Button variant="ghost" size="sm" disabled={!page?.hasNextPage} onClick={() => setPageNumber((current) => current + 1)}>
+                Next
+              </Button>
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -8,7 +8,7 @@
  * Mirrors the depositor upload flow (5-step wizard + SSE streaming AI validation).
  */
 
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft,
@@ -20,7 +20,7 @@ import {
   TriangleAlert,
   Upload,
 } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Button }   from '@/components/ui/button'
 import { Input }    from '@/components/ui/input'
@@ -36,6 +36,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth }  from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { api }      from '@/lib/api'
+import {
+  ALL_DOCUMENT_CATEGORIES,
+  getDocumentTypeCategories,
+  getDocumentTypesForCategory,
+} from '@/lib/document-types'
 import {
   confirmUploadAttempt,
   startUploadAttempt,
@@ -190,6 +195,7 @@ function StepBar({ current }: { current: StepKey }) {
 // ── Main component ────────────────────────────────────────────────────────────
 export function ScanUploadPage() {
   const navigate    = useNavigate()
+  const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
   const fileInputRef   = useRef<HTMLInputElement | null>(null)
   const streamAbortRef = useRef<AbortController | null>(null)
@@ -200,6 +206,7 @@ export function ScanUploadPage() {
   const warehousesQuery    = useWarehousesQuery(true)
 
   const [selectedTypeId, setSelectedTypeId] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState(ALL_DOCUMENT_CATEGORIES)
   const [warehouseId,    setWarehouseId]    = useState('')
   const [title,          setTitle]          = useState('')
   const [selectedFile,   setSelectedFile]   = useState<File | null>(null)
@@ -222,8 +229,22 @@ export function ScanUploadPage() {
     [documentTypesQuery.data, primaryRole]
   )
 
+  const documentCategories = useMemo(() => getDocumentTypeCategories(availableTypes), [availableTypes])
+  const filteredTypes = useMemo(
+    () => getDocumentTypesForCategory(availableTypes, selectedCategory),
+    [availableTypes, selectedCategory]
+  )
   const selectedType      = availableTypes.find((item) => item.id === selectedTypeId)
   const selectedWarehouse = (warehousesQuery.data ?? []).find((item) => String(item.id) === warehouseId)
+
+  // Pre-select category and type from URL params (?category=CEO_ISSUANCE&type=ceo_notice_to_depositor)
+  useEffect(() => {
+    const paramCategory = searchParams.get('category')
+    const paramType     = searchParams.get('type')
+    if (paramCategory) setSelectedCategory(paramCategory)
+    if (paramType)     setSelectedTypeId(paramType)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableTypes.length]) // re-run once types are loaded
 
   const currentStep: StepKey = createdDocument
     ? 'complete'
@@ -334,7 +355,7 @@ export function ScanUploadPage() {
 
   function resetAll() {
     resetFlow()
-    setSelectedTypeId(''); setWarehouseId(''); setTitle('')
+    setSelectedTypeId(''); setSelectedCategory(ALL_DOCUMENT_CATEGORIES); setWarehouseId(''); setTitle('')
     setSelectedFile(null); setManualStep('type')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
@@ -446,6 +467,45 @@ export function ScanUploadPage() {
               <h2 className="text-base font-semibold text-text-primary">Choose Document Type</h2>
               <p className="mt-1 text-sm text-text-secondary">Select the type that matches the document you are uploading.</p>
             </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Document Category</Label>
+                <Select
+                  value={selectedCategory}
+                  onValueChange={(value) => {
+                    setSelectedCategory(value)
+                    setSelectedTypeId('')
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_DOCUMENT_CATEGORIES}>All categories</SelectItem>
+                    {documentCategories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Document Type</Label>
+                <Select value={selectedTypeId} onValueChange={setSelectedTypeId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select document type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="grid gap-3">
               {documentTypesQuery.isLoading
                 ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-2xl" />)
@@ -455,7 +515,13 @@ export function ScanUploadPage() {
                     No document types are available for your role.
                   </div>
                 )
-                : availableTypes.map((type, index) => (
+                : filteredTypes.length === 0
+                ? (
+                  <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm text-text-secondary">
+                    No document types are available under this category.
+                  </div>
+                )
+                : filteredTypes.map((type, index) => (
                   <button
                     key={type.id}
                     type="button"
