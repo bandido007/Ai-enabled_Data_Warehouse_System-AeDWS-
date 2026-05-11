@@ -299,6 +299,45 @@ export interface RecentActivityApiItem {
   createdDate: string
 }
 
+export interface ScoreComponents {
+  totalDocuments: number
+  approvedRatio: number
+  correctionRatio: number
+  inspectionCoverage: number
+  recentActivity: number
+}
+
+export interface ContributingFactor {
+  type: 'positive' | 'negative' | 'neutral'
+  label: string
+}
+
+export interface WarehouseRanking {
+  id: number
+  warehouseId: number
+  warehouseName: string
+  region?: string | null
+  computationDate: string
+  scoreComponents: ScoreComponents
+  finalScore: number
+  riskCategory: 'LOW' | 'MEDIUM' | 'HIGH'
+  aiExplanation: string
+  contributingFactors: ContributingFactor[]
+  isLatest: boolean
+}
+
+export interface AnalyticsAggregates {
+  totalDocuments: number
+  approvedDocuments: number
+  pendingDocuments: number
+  rejectedDocuments: number
+  correctionNeededDocuments: number
+  totalUploadAttempts: number
+  passedUploads: number
+  rejectedUploads: number
+  warehousesCount: number
+}
+
 export interface DocumentStats {
   statusCounts: Record<string, number>
   approvedThisWeek: number

@@ -33,7 +33,7 @@ from wdms_reports.serializers import (
 from wdms_tenants.models import Warehouse
 from wdms_tenants.querysets import get_regulator_queryset
 from wdms_uaa.authorization import PermissionAuth
-from wdms_utils.SharedSerializer import BaseNonPagedResponseData
+from wdms_utils.SharedSerializer import BaseNonPagedResponseData, BaseSchema
 from wdms_utils.response import ResponseObject
 
 logger = logging.getLogger("wdms_logger")
@@ -90,7 +90,19 @@ def get_warehouse_ranking(request, warehouse_id: int):
     
     return WarehouseRankingResponseSerializer(
         response=ResponseObject.get_response(1),
-        data=WarehouseRankingSerializer.model_validate(ranking),
+        data=WarehouseRankingSerializer(
+            id=ranking.id,
+            warehouse_id=ranking.warehouse_id,
+            warehouse_name=ranking.warehouse.name,
+            region=ranking.warehouse.region.name if hasattr(ranking.warehouse, "region") and ranking.warehouse.region else None,
+            computation_date=ranking.computation_date,
+            score_components=ranking.score_components,
+            final_score=float(ranking.final_score),
+            risk_category=ranking.risk_category,
+            ai_explanation=ranking.ai_explanation,
+            contributing_factors=ranking.contributing_factors or [],
+            is_latest=ranking.is_latest,
+        ),
     )
 
 
@@ -139,7 +151,19 @@ def recompute_warehouse_ranking(request, warehouse_id: int):
         
         return WarehouseRankingResponseSerializer(
             response=ResponseObject.get_response(1),
-            data=WarehouseRankingSerializer.model_validate(new_ranking),
+            data=WarehouseRankingSerializer(
+                id=new_ranking.id,
+                warehouse_id=new_ranking.warehouse_id,
+                warehouse_name=new_ranking.warehouse.name,
+                region=new_ranking.warehouse.region.name if hasattr(new_ranking.warehouse, "region") and new_ranking.warehouse.region else None,
+                computation_date=new_ranking.computation_date,
+                score_components=new_ranking.score_components,
+                final_score=float(new_ranking.final_score),
+                risk_category=new_ranking.risk_category,
+                ai_explanation=new_ranking.ai_explanation,
+                contributing_factors=new_ranking.contributing_factors or [],
+                is_latest=new_ranking.is_latest,
+            ),
         )
     except Exception as e:
         logger.error(
@@ -154,7 +178,7 @@ def recompute_warehouse_ranking(request, warehouse_id: int):
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-class AggregatesSchema(BaseNonPagedResponseData):
+class AggregatesSchema(BaseSchema):
     """Analytics aggregates (document counts by status, upload attempts, etc.)."""
     total_documents: int
     approved_documents: int
@@ -167,9 +191,13 @@ class AggregatesSchema(BaseNonPagedResponseData):
     warehouses_count: int
 
 
+class AggregatesResponseSchema(BaseNonPagedResponseData):
+    data: Optional[AggregatesSchema] = None
+
+
 @reports_router.get(
     "/analytics/aggregates/",
-    response=AggregatesSchema,
+    response=AggregatesResponseSchema,
     auth=_auth,
 )
 def get_analytics_aggregates(
@@ -217,11 +245,11 @@ def get_analytics_aggregates(
         else:
             warehouse_qs = Warehouse.objects.none()
     
-    warehouse_ids = list(warehouse_qs.values_list("id", flat=True))
+    warehouse_ids = list(warehouse_qs.values_list("primary_key", flat=True))
     
     # Compute aggregates
-    doc_filter = Q(warehouse_id__in=warehouse_ids, is_active=True)
-    upload_filter = Q(warehouse_id__in=warehouse_ids)
+    doc_filter = Q(warehouse__primary_key__in=warehouse_ids, is_active=True)
+    upload_filter = Q(warehouse__primary_key__in=warehouse_ids)
     
     docs_qs = Document.objects.filter(doc_filter)
     uploads_qs = UploadAttempt.objects.filter(upload_filter)
@@ -251,16 +279,17 @@ def get_analytics_aggregates(
         ]
     ).count()
     
-    return AggregatesSchema(
+    return AggregatesResponseSchema(
         response=ResponseObject.get_response(1),
-        data={},  # Not really used for this endpoint
-        total_documents=total_docs,
-        approved_documents=approved,
-        pending_documents=pending,
-        rejected_documents=rejected,
-        correction_needed_documents=correction,
-        total_upload_attempts=total_uploads,
-        passed_uploads=passed_uploads,
-        rejected_uploads=rejected_uploads,
-        warehouses_count=len(warehouse_ids),
+        data=AggregatesSchema(
+            total_documents=total_docs,
+            approved_documents=approved,
+            pending_documents=pending,
+            rejected_documents=rejected,
+            correction_needed_documents=correction,
+            total_upload_attempts=total_uploads,
+            passed_uploads=passed_uploads,
+            rejected_uploads=rejected_uploads,
+            warehouses_count=len(warehouse_ids),
+        ),
     )

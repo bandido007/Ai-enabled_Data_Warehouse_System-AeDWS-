@@ -7,7 +7,7 @@ Currently covers warehouse statistics for the regulator dashboard.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Dict, List, Optional
 
 from wdms_utils.SharedSerializer import BaseNonPagedResponseData, BaseSchema
@@ -34,7 +34,7 @@ class WarehouseStatisticsSerializer(BaseSchema):
     corrections_requested_count: int = 0
 
     # Temporal
-    last_activity_at: Optional[date] = None
+    last_activity_at: Optional[datetime] = None
 
     # Ranking — populated from the latest WarehouseRanking row when available.
     # The frontend still treats null gracefully if ranking computation fails.

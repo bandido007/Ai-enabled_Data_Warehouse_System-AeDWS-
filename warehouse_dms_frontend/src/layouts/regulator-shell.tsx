@@ -64,7 +64,7 @@ export function RegulatorShell() {
   }
 
   return (
-    <div className="min-h-screen bg-canvas text-text-primary">
+    <div className="h-screen overflow-hidden bg-canvas text-text-primary">
       <header className="fixed inset-x-0 top-0 z-40 flex h-12 items-center justify-between border-b border-border bg-surface px-4 pl-5">
         <div className="flex items-center gap-3">
           <button
@@ -151,8 +151,8 @@ export function RegulatorShell() {
           </nav>
         </aside>
 
-        <main className={`min-h-[calc(100vh-48px)] flex-1 transition-standard ${collapsed ? 'ml-[60px]' : 'ml-[240px]'}`}>
-          <div className="page-shell py-8">
+        <main className={`h-[calc(100vh-48px)] min-w-0 flex-1 overflow-hidden transition-standard ${collapsed ? 'ml-[60px]' : 'ml-[240px]'}`}>
+          <div className="page-shell box-border h-full overflow-y-auto py-8 scrollbar-thin">
             <Outlet />
           </div>
         </main>

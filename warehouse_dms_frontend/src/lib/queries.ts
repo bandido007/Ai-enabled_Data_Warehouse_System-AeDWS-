@@ -1,13 +1,15 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { api, getDocumentStats, getItem, getList, postEnvelope, postItem, putEnvelope } from '@/lib/api'
 import type {
+  AnalyticsAggregates,
   AvailableTransition,
   DocumentRecord,
   DocumentTypeMetadata,
   LoginResponse,
   NotificationEvent,
   PreferenceItem,
+  WarehouseRanking,
   SearchMode,
   SearchResponseData,
   UploadAttemptStart,
@@ -340,3 +342,37 @@ export async function validateFormDraft(payload: {
   return data.data as FormValidationResult
 }
 
+// ── Reports / Ranking ─────────────────────────────────────────────────────────
+
+export function useWarehouseRankingQuery(warehouseId: string | number | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ['warehouse-ranking', warehouseId],
+    queryFn: () => getItem<WarehouseRanking>(`/reports/warehouses/${warehouseId}/ranking/`),
+    enabled: enabled && Boolean(warehouseId),
+    staleTime: 5 * 60 * 1000, // 5 min – rankings are pre-computed, not live
+  })
+}
+
+export function useRecomputeRankingMutation(warehouseId: string | number | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      postEnvelope(`/reports/warehouses/${warehouseId}/ranking/recompute/`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['warehouse-ranking', warehouseId] })
+      qc.invalidateQueries({ queryKey: ['regulatory-warehouse-statistics', warehouseId] })
+    },
+  })
+}
+
+export function useAnalyticsAggregatesQuery(warehouseId?: string | number, enabled = true) {
+  return useQuery({
+    queryKey: ['analytics-aggregates', warehouseId],
+    queryFn: () => {
+      const params = warehouseId ? `?warehouse_id=${warehouseId}` : ''
+      return getItem<AnalyticsAggregates>(`/reports/analytics/aggregates/${params}`)
+    },
+    enabled,
+    staleTime: 2 * 60 * 1000, // 2 min
+  })
+}

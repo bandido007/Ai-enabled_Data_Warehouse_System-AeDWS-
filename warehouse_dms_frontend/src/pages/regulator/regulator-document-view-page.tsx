@@ -36,12 +36,12 @@ export function RegulatorDocumentViewPage() {
   const fields = getExtractedFieldEntries(document.aiExtractedFields)
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col">
       <PageHeader title={document.title || t('regulator.readOnly.title')} subtitle={document.warehouseName} />
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(360px,2fr)]">
+      <div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(360px,2fr)]">
         <DocumentViewer fileUrl={document.fileUrl} />
-        <div className="space-y-4">
+        <div className="space-y-4 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:scrollbar-thin">
           <Card>
             <CardHeader className="border-b border-border px-5 py-4">
               <CardTitle>{t('regulator.readOnly.summary')}</CardTitle>
