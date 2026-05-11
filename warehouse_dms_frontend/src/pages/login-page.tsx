@@ -248,7 +248,7 @@ export function LoginPage() {
           AI-Enabled
           <br />
           <span style={{ backgroundImage: 'linear-gradient(90deg, #63dcca 0%, #a5edd9 55%, #63dcca 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Data Warehouse
+          Warehouse Document
           </span>
           <br />
           Management System
@@ -351,7 +351,7 @@ export function LoginPage() {
             All sessions are encrypted and audited
           </div>
         </div>
-        <p className="mt-6 text-center text-xs text-white/18">AI-Enabled Data Warehouse System · {new Date().getFullYear()}</p>
+        <p className="mt-6 text-center text-xs text-white/18">AI-Enabled Warehouse Document Management System · {new Date().getFullYear()}</p>
       </div>
 
       <style>{`

@@ -136,8 +136,8 @@ export function RegulatorShell() {
           <AeDWSLogo size={28} />
           {!collapsed && (
             <div className="ml-3 overflow-hidden">
-              <div className="truncate text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--admin-sidebar-title)' }}>AeDWMS</div>
-              <div className="truncate text-[9px] uppercase tracking-wider" style={{ color: 'var(--admin-sidebar-muted)' }}>Ai enabled Datawarehouse</div>
+              <div className="truncate text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--admin-sidebar-title)' }}>AeWDMS</div>
+              <div className="truncate text-[9px] uppercase tracking-wider" style={{ color: 'var(--admin-sidebar-muted)' }}>Ai enabled warehouse</div>
             </div>
           )}
         </div>
