@@ -3,6 +3,7 @@ from scalar_django_ninja import ScalarViewer
 
 from wdms_accounts.views import accounts_router
 from wdms_documents.views import documents_router
+from wdms_leave.views import leave_router
 from wdms_notifications.views import notifications_router
 from wdms_regulatory.views import regulatory_router
 from wdms_reports.views import reports_router
@@ -23,3 +24,4 @@ api_v1.add_router("/documents/", documents_router)
 api_v1.add_router("/notifications/", notifications_router)
 api_v1.add_router("/regulatory/", regulatory_router)
 api_v1.add_router("/reports/", reports_router)
+api_v1.add_router("/leave/", leave_router)

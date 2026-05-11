@@ -181,7 +181,20 @@ def _scope_documents_for_user(request: HttpRequest) -> QuerySet:
         warehouse = _user_warehouse(user)
         if warehouse is None:
             return base.none()
-        return base.filter(warehouse=warehouse)
+        # Own warehouse documents (normal scope)
+        in_warehouse = Q(warehouse=warehouse)
+        # CEO-issued docs addressed to STAFF (visible tenant-wide when APPROVED)
+        staff_visible_types = [
+            dt.id for dt in get_all_document_types()
+            if "STAFF" in dt.viewer_roles
+        ]
+        if staff_visible_types:
+            issued_to_staff = Q(
+                status="APPROVED",
+                document_type_id__in=staff_visible_types,
+            )
+            return base.filter(in_warehouse | issued_to_staff)
+        return base.filter(in_warehouse)
 
     if role in ("MANAGER", "CEO"):
         tenant = get_user_tenant(user)
@@ -1079,6 +1092,19 @@ def list_documents(
         if filtering:
             if filtering.status:
                 queryset = queryset.filter(status=filtering.status)
+            if filtering.status_group == "PENDING_REVIEW":
+                queryset = queryset.filter(
+                    status__in=["PENDING_STAFF", "PENDING_MANAGER", "PENDING_CEO"]
+                )
+                filtering.status_group = None
+            if filtering.document_category:
+                document_type_ids = [
+                    document_type.id
+                    for document_type in get_all_document_types()
+                    if document_type.category == filtering.document_category
+                ]
+                queryset = queryset.filter(document_type_id__in=document_type_ids)
+                filtering.document_category = None
             if filtering.document_type_id:
                 queryset = queryset.filter(
                     document_type_id=filtering.document_type_id
@@ -1099,7 +1125,10 @@ def list_documents(
                     )
 
         return get_paginated_and_non_paginated_data(
-            queryset, filtering, DocumentPagedResponseSerializer
+            queryset,
+            filtering,
+            DocumentPagedResponseSerializer,
+            custom_date_field_name="created_date__date",
         )
     except Exception as e:
         logger.error(f"List documents error: {e}")

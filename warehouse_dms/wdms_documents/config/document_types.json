@@ -272,7 +272,6 @@
         "business_name",
         "physical_address",
         "telephone_number",
-        "authorized_signatory_name",
         "crop_type",
         "storage_quantity_kg",
         "bank_name",
@@ -284,6 +283,7 @@
       "optional_fields": [
         "form_number",
         "season",
+        "authorized_signatory_name",
         "warehouse_operator_signature",
         "warehouse_operator_name"
       ],
@@ -951,7 +951,109 @@
         "warehouse costs regulatory",
         "storage handling labor utilities costs",
         "warehouse financial operations report"
+      ]    },
+    {
+      "id": "ceo_notice_to_depositor",
+      "label": "CEO Notice / Certificate to Depositor",
+      "form_number": "CEO-D",
+      "category": "CEO_ISSUANCE",
+      "initial_state": "APPROVED",
+      "allowed_uploader_roles": ["CEO"],
+      "viewer_roles": ["DEPOSITOR"],
+      "allowed_transitions": [],
+      "required_fields": ["title"],
+      "optional_fields": [],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.6,
+        "require_signature": false,
+        "require_stamp": false,
+        "require_date": false,
+        "notes": "CEO-issued notice, certificate, or instruction addressed to a Depositor. Published immediately as APPROVED."
+      },
+      "classification_hints": [
+        "CEO notice to depositor",
+        "CEO certificate depositor",
+        "CEO issued document depositor",
+        "executive notice depositor"
       ]
-    }
+    },
+    {
+      "id": "ceo_directive_to_staff",
+      "label": "CEO Directive / Circular to Staff",
+      "form_number": "CEO-S",
+      "category": "CEO_ISSUANCE",
+      "initial_state": "APPROVED",
+      "allowed_uploader_roles": ["CEO"],
+      "viewer_roles": ["STAFF", "MANAGER"],
+      "allowed_transitions": [],
+      "required_fields": ["title"],
+      "optional_fields": [],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.6,
+        "require_signature": false,
+        "require_stamp": false,
+        "require_date": false,
+        "notes": "CEO internal directive, policy circular, or memo addressed to Staff. Viewable by Staff and Managers."
+      },
+      "classification_hints": [
+        "CEO directive staff",
+        "CEO circular staff",
+        "CEO memo staff",
+        "executive directive internal staff"
+      ]
+    },
+    {
+      "id": "ceo_directive_to_manager",
+      "label": "CEO Directive to Management",
+      "form_number": "CEO-M",
+      "category": "CEO_ISSUANCE",
+      "initial_state": "APPROVED",
+      "allowed_uploader_roles": ["CEO"],
+      "viewer_roles": ["MANAGER"],
+      "allowed_transitions": [],
+      "required_fields": ["title"],
+      "optional_fields": [],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.6,
+        "require_signature": false,
+        "require_stamp": false,
+        "require_date": false,
+        "notes": "CEO directive or instruction addressed to Managers only. Not visible to regular staff."
+      },
+      "classification_hints": [
+        "CEO directive manager",
+        "CEO instruction management",
+        "CEO memo management",
+        "executive directive managers"
+      ]
+    },
+    {
+      "id": "ceo_submission_to_regulator",
+      "label": "CEO Submission to Regulatory Body",
+      "form_number": "CEO-R",
+      "category": "CEO_ISSUANCE",
+      "initial_state": "APPROVED",
+      "allowed_uploader_roles": ["CEO"],
+      "viewer_roles": ["REGULATOR"],
+      "allowed_transitions": [],
+      "required_fields": ["title"],
+      "optional_fields": [],
+      "file_formats": ["pdf", "jpg", "jpeg", "png"],
+      "validation_rules": {
+        "min_ocr_confidence": 0.6,
+        "require_signature": false,
+        "require_stamp": false,
+        "require_date": false,
+        "notes": "CEO document, report, or submission addressed to a Regulatory Authority (WRRB, TFDA, etc.). Visible to Regulators."
+      },
+      "classification_hints": [
+        "CEO submission regulator",
+        "CEO report regulatory authority",
+        "CEO WRRB submission",
+        "executive submission regulatory body"
+      ]    }
   ]
 }

@@ -155,6 +155,11 @@ class ChangePasswordInputSerializer(BaseSchema):
     new_password: str
 
 
+class AuthenticatedChangePasswordInputSerializer(BaseSchema):
+    current_password: str
+    new_password: str
+
+
 class AdminCreateUserInputSerializer(BaseSchema):
     username: str
     email: str
@@ -164,6 +169,7 @@ class AdminCreateUserInputSerializer(BaseSchema):
     phone_number: str = ""
     account_type: str = "DEPOSITOR"
     role_name: str = "DEPOSITOR"
+    has_been_verified: bool = True
     tenant_unique_id: Optional[str] = None
     warehouse_unique_id: Optional[str] = None
 

@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "wdms_notifications",
     "wdms_reports",
     "wdms_regulatory",
+    "wdms_leave",
 ]
 
 MIDDLEWARE = [

@@ -7,6 +7,7 @@ from ninja import Query, Router
 
 from wdms_accounts.models import ActivateAccountTokenUser, ForgotPasswordRequestUser, UserProfile
 from wdms_accounts.serializers import (
+    AuthenticatedChangePasswordInputSerializer,
     AdminResetPasswordInputSerializer,
     AdminCreateUserInputSerializer,
     AdminUpdateUserInputSerializer,
@@ -194,6 +195,30 @@ def change_password(request: HttpRequest, input: ChangePasswordInputSerializer):
         return BaseNonPagedResponseData(response=ResponseObject.get_response(2, str(e)))
 
 
+@accounts_router.post(
+    "/me/change-password",
+    response=BaseNonPagedResponseData,
+    auth=PermissionAuth(),
+)
+def change_own_password(request: HttpRequest, input: AuthenticatedChangePasswordInputSerializer):
+    try:
+        if not request.user.check_password(input.current_password):
+            return BaseNonPagedResponseData(
+                response=ResponseObject.get_response(0, "Current password is incorrect")
+            )
+
+        request.user.set_password(input.new_password)
+        request.user.save()
+
+        logger.info(f"Password changed by authenticated user: {request.user.username}")
+        return BaseNonPagedResponseData(
+            response=ResponseObject.get_response(1, "Password changed successfully")
+        )
+    except Exception as e:
+        logger.error(f"Authenticated password change error: {e}")
+        return BaseNonPagedResponseData(response=ResponseObject.get_response(2, str(e)))
+
+
 # ── My profile ────────────────────────────────────────────────────────────────
 
 @accounts_router.get(
@@ -322,7 +347,7 @@ def admin_create_user(request: HttpRequest, input: AdminCreateUserInputSerialize
             if profile:
                 profile.phone_number = input.phone_number
                 profile.account_type = input.account_type
-                profile.has_been_verified = True
+                profile.has_been_verified = input.has_been_verified
                 profile.created_by = request.user
 
                 tenant, warehouse = _resolve_assignment_scope(

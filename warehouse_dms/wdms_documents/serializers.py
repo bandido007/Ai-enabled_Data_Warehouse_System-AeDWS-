@@ -167,6 +167,8 @@ class DocumentTableSerializer(BaseSerializer):
 
 class DocumentFilteringSerializer(BasePagedFilteringSerializer):
     status: Optional[str] = None
+    status_group: Optional[str] = None
+    document_category: Optional[str] = None
     document_type_id: Optional[str] = None
     uploader_id: Optional[int] = None
     warehouse_id: Optional[int] = None
@@ -237,6 +239,7 @@ class DocumentTypeMetadataSerializer(BaseSchema):
     category: str
     initial_state: str
     allowed_uploader_roles: List[str]
+    viewer_roles: List[str] = []
     allowed_transitions: List[DocumentTypeTransitionSerializer]
     required_fields: List[str]
     optional_fields: List[str] = []
